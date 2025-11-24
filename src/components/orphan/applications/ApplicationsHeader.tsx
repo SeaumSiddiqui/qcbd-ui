@@ -1,5 +1,5 @@
 import React from 'react';
-import { Filter } from 'lucide-react';
+import { Filter, Download } from 'lucide-react';
 import { Button } from '../../ui/Button';
 import { PageResponse, OrphanApplicationSummaryDTO } from '../../../types';
 
@@ -8,13 +8,15 @@ interface ApplicationsHeaderProps {
   showFilters: boolean;
   onToggleFilters: () => void;
   onCreateNew: () => void;
+  onExport?: () => void;
 }
 
 export const ApplicationsHeader: React.FC<ApplicationsHeaderProps> = ({
   applications,
   showFilters,
   onToggleFilters,
-  onCreateNew
+  onCreateNew,
+  onExport
 }) => {
   return (
     <div className="sticky top-0 z-30 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm">
@@ -41,7 +43,19 @@ export const ApplicationsHeader: React.FC<ApplicationsHeaderProps> = ({
               <Filter className="h-4 w-4" />
               <span>Filters</span>
             </Button>
-            
+
+            {onExport && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onExport}
+                className="flex items-center space-x-2"
+              >
+                <Download className="h-4 w-4" />
+                <span>Export</span>
+              </Button>
+            )}
+
             <Button
               variant="primary"
               size="sm"

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { ToastProvider } from './components/ui/Toast';
 import { useAuth } from './hooks/useAuth';
@@ -15,149 +16,104 @@ import { UpdateOrphanApplication } from './components/orphan/UpdateOrphanApplica
 import { UserCreation } from './components/user/creation/UserCreation';
 
 function App() {
-  const { loading, user, isAuthenticated } = useAuth();
+  const { loading, user } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [currentPage, setCurrentPage] = useState<'home' | 'profile' | 'orphan-application' | 'orphan-application-view' | 'orphan-applications-view' | 'user-creation'>('home');
-  const [applicationId, setApplicationId] = useState<string | undefined>();
-  
-  // Show loading spinner while auth is initializing
+
+  // Debug logging
+  React.useEffect(() => {
+    console.log('[App] Component mounted/updated');
+    console.log('[App] Current path:', window.location.pathname);
+    console.log('[App] Loading:', loading);
+    console.log('[App] User:', user?.username);
+  }, [loading, user]);
+
+  // Don't render a completely different component during loading
+  // This causes React Router to lose track of the current route
   if (loading) {
+    console.log('[App] Showing loading spinner at path:', window.location.pathname);
     return (
       <ThemeProvider>
-        <LoadingSpinner message="Initializing Qatar Charity Bangladesh..." />
+        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+          <LoadingSpinner message="Initializing Qatar Charity Bangladesh..." />
+        </div>
       </ThemeProvider>
     );
   }
 
+  console.log('[App] Rendering routes at path:', window.location.pathname);
+
   const handleMenuToggle = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
-  };
-
-  const handleNavigateToProfile = () => {
-    setCurrentPage('profile');
-    setIsMobileMenuOpen(false);
-  };
-
-  const handleNavigateToOrphanApplication = (id?: string) => {
-    setApplicationId(id);
-    setCurrentPage('orphan-application');
-    setIsMobileMenuOpen(false);
-  };
-
-  const handleNavigateToOrphanApplicationsView = () => {
-    setCurrentPage('orphan-applications-view');
-    setIsMobileMenuOpen(false);
-  };
-
-  const handleNavigateToOrphanApplicationView = (id: string) => {
-    setApplicationId(id);
-    setCurrentPage('orphan-application-view');
-    setIsMobileMenuOpen(false);
-  };
-
-  const handleNavigateToUserCreation = () => {
-    setCurrentPage('user-creation');
-    setIsMobileMenuOpen(false);
-  };
-
-  const handleBackToHome = () => {
-    setCurrentPage('home');
-    setApplicationId(undefined);
-  };
-  const renderContent = () => {
-    if (!isAuthenticated) {
-      return <HomePage />;
-    }
-
-    switch (currentPage) {
-      case 'profile':
-        return (
-          <ProtectedRoute>
-            <UserProfile userId={user?.id || user?.username || ''} />
-          </ProtectedRoute>
-        );
-      case 'orphan-application':
-        return (
-            applicationId ? (
-              <ProtectedRoute requiredRoles={['app-agent', 'app-authenticator', 'app-admin']}>
-                <UpdateOrphanApplication
-                  applicationId={applicationId}
-                  onCancel={handleBackToHome}
-                  onSave={() => {
-                    // Handle successful save
-                    handleBackToHome();
-                  }}
-                />
-              </ProtectedRoute>
-            ) : (
-              <ProtectedRoute requiredRoles={['app-admin', 'app-agent']}>
-                <CreateOrphanApplication
-                  onCancel={handleBackToHome}
-                  onSave={() => {
-                    // Handle successful save
-                    handleBackToHome();
-                  }}
-                />
-              </ProtectedRoute>
-            ));
-      case 'orphan-application-view':
-        return (
-          <ProtectedRoute requiredRoles={['app-agent', 'app-authenticator', 'app-admin']}>
-            {applicationId ? (
-              <OrphanApplicationView
-                applicationId={applicationId}
-                onBack={() => setCurrentPage('orphan-applications-view')}
-              />
-            ) : null}
-          </ProtectedRoute>
-        );
-      case 'orphan-applications-view':
-        return (
-          <ProtectedRoute requiredRoles={['app-agent', 'app-authenticator', 'app-admin']}>
-            <OrphanApplicationsView
-              onViewApplication={handleNavigateToOrphanApplicationView}
-              onEditApplication={(appId) => {
-                setApplicationId(appId);
-                setCurrentPage('orphan-application');
-              }}
-              onCreateNew={() => {
-                setApplicationId(undefined);
-                setCurrentPage('orphan-application');
-              }}
-            />
-          </ProtectedRoute>
-        );
-      case 'user-creation':
-        return (
-          <RoleBasedAccess requiredRoles={['app-admin', 'app-agent']}>
-            <UserCreation
-              onComplete={() => {
-                // Handle successful user creation
-                handleBackToHome();
-              }}
-              onCancel={handleBackToHome}
-            />
-          </RoleBasedAccess>
-        );
-      default:
-        return <HomePage />;
-    }
   };
 
   return (
     <ThemeProvider>
       <ToastProvider>
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
-          <Header 
+          <Header
             onMenuToggle={handleMenuToggle}
             isMobileMenuOpen={isMobileMenuOpen}
-            onNavigateToProfile={handleNavigateToProfile}
-            onNavigateToOrphanApplication={handleNavigateToOrphanApplication}
-            onNavigateToOrphanApplicationsView={handleNavigateToOrphanApplicationsView}
-            onNavigateToUserCreation={handleNavigateToUserCreation}
           />
           <main>
-            {renderContent()}
+            <Routes>
+              <Route path="/" element={<HomePage />} />
+
+              <Route
+                path="/profile"
+                element={
+                  <ProtectedRoute>
+                    <UserProfile userId={user?.id || user?.username || ''} />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/applications"
+                element={
+                  <ProtectedRoute requiredRoles={['app-agent', 'app-authenticator', 'app-admin']}>
+                    <OrphanApplicationsView />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/applications/create"
+                element={
+                  <ProtectedRoute requiredRoles={['app-admin', 'app-agent']}>
+                    <CreateOrphanApplication />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/applications/:id"
+                element={
+                  <ProtectedRoute requiredRoles={['app-agent', 'app-authenticator', 'app-admin']}>
+                    <OrphanApplicationView />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/applications/:id/edit"
+                element={
+                  <ProtectedRoute requiredRoles={['app-agent', 'app-authenticator', 'app-admin']}>
+                    <UpdateOrphanApplication />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/users/create"
+                element={
+                  <RoleBasedAccess requiredRoles={['app-admin', 'app-agent']}>
+                    <UserCreation />
+                  </RoleBasedAccess>
+                }
+              />
+
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
           </main>
         </div>
       </ToastProvider>

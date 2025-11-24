@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Heart, Menu, X, ChevronDown } from 'lucide-react';
 import { ThemeToggle } from '../ui/ThemeToggle';
 import { UserMenu } from '../ui/UserMenu';
@@ -9,19 +10,11 @@ import { Button } from '../ui/Button';
 interface HeaderProps {
   onMenuToggle?: () => void;
   isMobileMenuOpen?: boolean;
-  onNavigateToProfile?: () => void;
-  onNavigateToOrphanApplication?: (id?: string) => void;
-  onNavigateToOrphanApplicationsView?: () => void;
-  onNavigateToUserCreation?: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ 
-  onMenuToggle, 
-  isMobileMenuOpen, 
-  onNavigateToProfile,
-  onNavigateToOrphanApplication,
-  onNavigateToOrphanApplicationsView,
-  onNavigateToUserCreation
+export const Header: React.FC<HeaderProps> = ({
+  onMenuToggle,
+  isMobileMenuOpen
 }) => {
   const { isAuthenticated, user, login, logout } = useAuth();
 
@@ -68,12 +61,12 @@ export const Header: React.FC<HeaderProps> = ({
                 </button>
                 <div className="absolute top-full left-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-[100] focus:outline-none">
                   <div className="py-1">
-                    <a
-                      onClick={() => onNavigateToOrphanApplication?.()}
+                    <Link
+                      to="/applications/create"
                       className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200 focus:outline-none"
                     >
                       Orphan Campaign
-                    </a>
+                    </Link>
                   </div>
                 </div>
               </div>
@@ -87,12 +80,12 @@ export const Header: React.FC<HeaderProps> = ({
                 </button>
                 <div className="absolute top-full left-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-[100]">
                   <div className="py-1">
-                    <a
-                      onClick={() => onNavigateToOrphanApplicationsView?.()}
+                    <Link
+                      to="/applications"
                       className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
                     >
                       Orphan Applications
-                    </a>
+                    </Link>
                   </div>
                 </div>
               </div>
@@ -106,12 +99,12 @@ export const Header: React.FC<HeaderProps> = ({
                 </button>
                 <div className="absolute top-full left-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-[100]">
                   <div className="py-1">
-                    <a
-                      onClick={() => onNavigateToUserCreation?.()}
+                    <Link
+                      to="/users/create"
                       className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
                     >
                       Create User
-                    </a>
+                    </Link>
                   </div>
                 </div>
               </div>
@@ -125,12 +118,12 @@ export const Header: React.FC<HeaderProps> = ({
                 </button>
                 <div className="absolute top-full left-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-[100]">
                   <div className="py-1">
-                    <a
-                      onClick={() => onNavigateToOrphanApplication?.()}
+                    <Link
+                      to="/applications/create"
                       className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
                     >
                       My Enrollments
-                    </a>
+                    </Link>
                   </div>
                 </div>
               </div>
@@ -142,7 +135,7 @@ export const Header: React.FC<HeaderProps> = ({
             {/* Authentication Section */}
             {isAuthenticated ? (
               <div className="hidden md:block">
-                <UserMenu onNavigateToProfile={onNavigateToProfile} />
+                <UserMenu />
               </div>
             ) : (
               <Button
@@ -176,7 +169,7 @@ export const Header: React.FC<HeaderProps> = ({
               {/* Mobile Auth Section */}
               {isAuthenticated ? (
                 <div className="px-3 py-2 mb-3">
-                  <UserMenu onNavigateToProfile={onNavigateToProfile} />
+                  <UserMenu />
                 </div>
               ) : (
                 <div className="px-3 py-2 mb-3">
@@ -203,16 +196,12 @@ export const Header: React.FC<HeaderProps> = ({
                   <div className="px-3 py-2 text-sm font-semibold text-gray-900 dark:text-white">
                     Programs
                   </div>
-                  <a
-                    href="#"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      onNavigateToOrphanApplication?.();
-                    }}
+                  <Link
+                    to="/applications/create"
                     className="block px-6 py-2 text-base font-medium text-gray-700 dark:text-gray-300 hover:text-primary-900 dark:hover:text-secondary-500 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md transition-colors duration-200"
                   >
                     Orphan Campaign
-                  </a>
+                  </Link>
                 </div>
               </StaffOnly>
 
@@ -221,12 +210,12 @@ export const Header: React.FC<HeaderProps> = ({
                   <div className="px-3 py-2 text-sm font-semibold text-gray-900 dark:text-white">
                     Application Dashboard
                   </div>
-                  <a
-                    onClick={() => onNavigateToOrphanApplicationsView?.()}
+                  <Link
+                    to="/applications"
                     className="block px-6 py-2 text-base font-medium text-gray-700 dark:text-gray-300 hover:text-primary-900 dark:hover:text-secondary-500 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md transition-colors duration-200"
                   >
                     Orphan Applications
-                  </a>
+                  </Link>
                 </div>
               </StaffOnly>
 
@@ -235,12 +224,12 @@ export const Header: React.FC<HeaderProps> = ({
                   <div className="px-3 py-2 text-sm font-semibold text-gray-900 dark:text-white">
                     User Management
                   </div>
-                  <a
-                    onClick={() => onNavigateToUserCreation?.()}
+                  <Link
+                    to="/users/create"
                     className="block px-6 py-2 text-base font-medium text-gray-700 dark:text-gray-300 hover:text-primary-900 dark:hover:text-secondary-500 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md transition-colors duration-200"
                   >
                     Create User
-                  </a>
+                  </Link>
                 </div>
               </AdminOrAgent>
 
@@ -249,16 +238,12 @@ export const Header: React.FC<HeaderProps> = ({
                   <div className="px-3 py-2 text-sm font-semibold text-gray-900 dark:text-white">
                     Dashboard
                   </div>
-                  <a
-                    href="#"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      onNavigateToOrphanApplication?.();
-                    }}
+                  <Link
+                    to="/applications/create"
                     className="block px-6 py-2 text-base font-medium text-gray-700 dark:text-gray-300 hover:text-primary-900 dark:hover:text-secondary-500 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md transition-colors duration-200"
                   >
                     My Enrollments
-                  </a>
+                  </Link>
                 </div>
               </UserOnly>
             </div>

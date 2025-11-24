@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { UserCreateRequest, UserType, UserCreationState, UserMediaType, ValidationError } from '../../../types';
 import { userService } from '../../../services/userService';
 import { useAuth } from '../../../hooks/useAuth';
@@ -9,25 +10,22 @@ import { ProfileCreationForm } from './ProfileCreationForm';
 import { MediaUploadForm } from './MediaUploadForm';
 
 interface UserCreationProps {
-  onComplete?: (userId: string) => void;
-  onCancel?: () => void;
   mode?: 'create' | 'update';
   existingUserId?: string;
   existingUserData?: UserCreateRequest;
 }
 
 export const UserCreation: React.FC<UserCreationProps> = ({
-  onComplete,
-  onCancel,
   mode = 'create',
   existingUserId,
   existingUserData
 }) => {
-  const { hasAnyRole, isAdmin, isAgent } = useAuth();
+  const navigate = useNavigate();
+  const { isAdmin, isAgent } = useAuth();
   const { showToast } = useToast();
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<ValidationError[]>([]);
-  
+
   const [state, setState] = useState<UserCreationState>({
     step: 1,
     userType: existingUserData?.beneficiaryCreateRequest ? UserType.REGULAR : UserType.IN_ORGANIZATION,
@@ -49,23 +47,13 @@ export const UserCreation: React.FC<UserCreationProps> = ({
   // Role-based access control
   const hasCreateAccess = isAdmin() || isAgent();
   const hasUpdateAccess = isAdmin() || isAgent();
-  const hasDeleteAccess = isAdmin();
-  
+
   // Agent restrictions
   const canManageUserType = (userType: UserType) => {
     if (isAdmin()) return true;
     if (isAgent()) return userType === UserType.REGULAR;
     return false;
   };
-
-  // Redirect if user doesn't have create access
-  React.useEffect(() => {
-    const hasAccess = mode === 'create' ? hasCreateAccess : hasUpdateAccess;
-    if (!hasAccess) {
-      showToast('error', 'Access Denied', `Only admins and agents can ${mode} users.`);
-      onCancel?.();
-    }
-  }, [hasCreateAccess, hasUpdateAccess, mode, onCancel, showToast]);
 
   const validateProfileData = (data: UserCreateRequest): ValidationError[] => {
     const errors: ValidationError[] = [];
@@ -145,10 +133,10 @@ export const UserCreation: React.FC<UserCreationProps> = ({
       }
       
       setState(prev => ({ ...prev, createdUserId: userId }));
-      
+
       if (state.userType === UserType.REGULAR) {
         // Regular users are complete after profile creation
-        onComplete?.(userId);
+        navigate('/');
       } else {
         // Organization users need to upload media
         setState(prev => ({ ...prev, step: 2 }));
@@ -183,16 +171,16 @@ export const UserCreation: React.FC<UserCreationProps> = ({
 
   const handleMediaComplete = () => {
     const action = state.isUpdate ? 'updated' : 'created';
-    showToast('success', `User ${action.charAt(0).toUpperCase() + action.slice(1)}`, 
+    showToast('success', `User ${action.charAt(0).toUpperCase() + action.slice(1)}`,
       `Organization user has been ${action} successfully with all media files!`);
-    onComplete?.(state.createdUserId!);
+    navigate('/');
   };
 
   const handleMediaSkip = () => {
     const action = state.isUpdate ? 'updated' : 'created';
-    showToast('success', `User ${action.charAt(0).toUpperCase() + action.slice(1)}`, 
+    showToast('success', `User ${action.charAt(0).toUpperCase() + action.slice(1)}`,
       `Organization user has been ${action} successfully!`);
-    onComplete?.(state.createdUserId!);
+    navigate('/');
   };
 
   const handleBackToUserType = () => {
@@ -241,7 +229,7 @@ export const UserCreation: React.FC<UserCreationProps> = ({
                   data={state.profileData}
                   onChange={handleProfileDataChange}
                   onSubmit={handleProfileSubmit}
-                  onBack={state.isUpdate ? (onCancel || (() => {})) : handleBackToUserType}
+                  onBack={state.isUpdate ? (() => navigate('/')) : handleBackToUserType}
                   loading={loading}
                   errors={errors}
                   mode={mode}

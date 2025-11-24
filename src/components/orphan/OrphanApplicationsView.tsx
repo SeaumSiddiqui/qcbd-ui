@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { OrphanApplicationSummaryDTO, PageResponse, OrphanApplicationFilters, ApplicationStatus } from '../../types';
 import { applicationService } from '../../services/applicationService';
 import { useAuth } from '../../hooks/useAuth';
@@ -11,25 +12,21 @@ import { ApplicationsTable } from './applications/ApplicationsTable';
 import { ApplicationsPagination } from './applications/ApplicationsPagination';
 import { EmptyState } from './applications/EmptyState';
 import { downloadService } from '../../services/downloadService';
-import { StatusChangeModal } from './shared/StatusChangeModal'; 
+import { StatusChangeModal } from './shared/StatusChangeModal';
+import { ExportModal } from './applications/ExportModal';
 
-interface OrphanApplicationsViewProps {
-  onViewApplication?: (applicationId: string) => void;
-  onEditApplication?: (applicationId: string) => void;
-  onCreateNew?: () => void;
-}
+interface OrphanApplicationsViewProps {}
 
-export const OrphanApplicationsView: React.FC<OrphanApplicationsViewProps> = ({
-  onViewApplication,
-  onEditApplication,
-  onCreateNew
-}) => {
+export const OrphanApplicationsView: React.FC<OrphanApplicationsViewProps> = () => {
+  const navigate = useNavigate();
   const { hasAnyRole } = useAuth();
   const { showToast } = useToast();
   const [applications, setApplications] = useState<PageResponse<OrphanApplicationSummaryDTO> | null>(null);
   const [loading, setLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
   const [statusChangeModal, setStatusChangeModal] = useState<{ applicationId: string; currentStatus: ApplicationStatus } | null>(null);
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const [filters, setFilters] = useState<OrphanApplicationFilters>({
     page: 0,
     size: 10,
@@ -123,6 +120,31 @@ export const OrphanApplicationsView: React.FC<OrphanApplicationsViewProps> = ({
     });
   };
 
+  const handleExport = async (selectedHeaders: string[]) => {
+    try {
+      setIsExporting(true);
+      const { page, size, ...filtersWithoutPagination } = filters;
+      const blob = await applicationService.exportToExcel(filtersWithoutPagination, selectedHeaders);
+
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `orphan-applications-${new Date().toISOString().split('T')[0]}.xlsx`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      showToast('success', 'Export Successful', 'Applications exported to Excel successfully.');
+      setShowExportModal(false);
+    } catch (error) {
+      console.error('Failed to export applications:', error);
+      showToast('error', 'Export Failed', 'Failed to export applications. Please try again.');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   const handleChangeStatus = (applicationId: string, currentStatus: ApplicationStatus) => {
     setStatusChangeModal({ applicationId, currentStatus });
   };
@@ -163,7 +185,8 @@ export const OrphanApplicationsView: React.FC<OrphanApplicationsViewProps> = ({
         applications={applications}
         showFilters={showFilters}
         onToggleFilters={() => setShowFilters(!showFilters)}
-        onCreateNew={onCreateNew || (() => {})}
+        onCreateNew={() => navigate('/applications/create')}
+        onExport={() => setShowExportModal(true)}
       />
 
       {/* Filter Panel */}
@@ -183,7 +206,7 @@ export const OrphanApplicationsView: React.FC<OrphanApplicationsViewProps> = ({
               <LoadingSpinner size="lg" message="Loading applications..." fullScreen={false} />
             </div>
           ) : applications?.content.length === 0 ? (
-            <EmptyState filters={filters} onCreateNew={onCreateNew || (() => {})} />
+            <EmptyState filters={filters} onCreateNew={() => navigate('/applications/create')} />
           ) : (
             <>
               {/* Applications Table */}
@@ -192,8 +215,8 @@ export const OrphanApplicationsView: React.FC<OrphanApplicationsViewProps> = ({
                 filters={filters}
                 onSort={handleSort}
                 onPageSizeChange={handlePageSizeChange}
-                onView={onViewApplication || (() => {})}
-                onEdit={onEditApplication || (() => {})}
+                onView={(id) => navigate(`/applications/${id}`)}
+                onEdit={(id) => navigate(`/applications/${id}/edit`)}
                 onDelete={handleDelete}
                 onDownload={handleDownload}
                 onChangeStatus={handleChangeStatus}
@@ -218,6 +241,13 @@ export const OrphanApplicationsView: React.FC<OrphanApplicationsViewProps> = ({
           onConfirm={handleConfirmStatusChange}
         />
       )}
+
+      <ExportModal
+        isOpen={showExportModal}
+        onClose={() => setShowExportModal(false)}
+        onExport={handleExport}
+        isExporting={isExporting}
+      />
     </div>
   );
 };

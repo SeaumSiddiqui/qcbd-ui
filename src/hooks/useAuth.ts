@@ -31,15 +31,22 @@ const notifySubscribers = (newState: AuthState) => {
   subscribers.forEach(callback => callback(newState));
 };
 
+// Store the intended path before initialization
+let intendedPath = window.location.pathname + window.location.search + window.location.hash;
+
 // Initialize authentication once
 const initializeAuth = async () => {
   if (isInitializing) return;
-  
+
   isInitializing = true;
-  
+
+  // Save the path the user intended to visit
+  intendedPath = window.location.pathname + window.location.search + window.location.hash;
+  console.log('Intended path:', intendedPath);
+
   try {
     console.log('Starting auth initialization...');
-    
+
     const isAuthenticated = await keycloakService.init();
     const user = keycloakService.getUser();
     const token = keycloakService.getToken();
@@ -59,15 +66,21 @@ const initializeAuth = async () => {
       error: null
     };
 
-    console.log('Auth initialization complete:', { 
-      isAuthenticated, 
+    console.log('Auth initialization complete:', {
+      isAuthenticated,
       user: user?.username,
-      roles: user?.roles 
+      roles: user?.roles
     });
+
+    // Check if we were redirected away from the intended path
+    const currentPath = window.location.pathname + window.location.search + window.location.hash;
+    console.log('Current path after init:', currentPath);
+    console.log('Intended path was:', intendedPath);
+
     notifySubscribers(newState);
   } catch (error) {
     console.error('Auth initialization failed:', error);
-    
+
     const newState: AuthState = {
       isAuthenticated: false,
       user: null,
@@ -75,7 +88,7 @@ const initializeAuth = async () => {
       loading: false,
       error: error instanceof Error ? error.message : 'Authentication failed'
     };
-    
+
     notifySubscribers(newState);
   } finally {
     isInitializing = false;

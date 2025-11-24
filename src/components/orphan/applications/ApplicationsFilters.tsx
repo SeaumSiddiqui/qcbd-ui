@@ -9,6 +9,75 @@ interface ApplicationsFiltersProps {
   onClearFilters: () => void;
 }
 
+const FilterInput: React.FC<{
+  label: string;
+  value: string | undefined;
+  onChange: (value: string) => void;
+  onClear: () => void;
+  placeholder: string;
+  type?: string;
+}> = ({ label, value, onChange, onClear, placeholder, type = "text" }) => (
+  <div className="relative">
+    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+      {label}
+    </label>
+    <div className="relative">
+      <input
+        type={type}
+        value={value || ''}
+        onChange={(e) => onChange(e.target.value || '')}
+        placeholder={placeholder}
+        className="w-full px-3 py-2 pr-8 border border-gray-300 dark:border-gray-600 rounded-md text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+      />
+      {value && (
+        <button
+          onClick={onClear}
+          className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+        >
+          <X className="h-3 w-3" />
+        </button>
+      )}
+    </div>
+  </div>
+);
+
+const FilterSelect: React.FC<{
+  label: string;
+  value: string | undefined;
+  onChange: (value: string) => void;
+  onClear: () => void;
+  options: { value: string; label: string }[];
+  placeholder: string;
+}> = ({ label, value, onChange, onClear, options, placeholder }) => (
+  <div className="relative">
+    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+      {label}
+    </label>
+    <div className="relative">
+      <select
+        value={value || ''}
+        onChange={(e) => onChange(e.target.value || '')}
+        className="w-full px-3 py-2 pr-8 border border-gray-300 dark:border-gray-600 rounded-md text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary-500 focus:border-primary-500 appearance-none"
+      >
+        <option value="">{placeholder}</option>
+        {options.map(option => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+      {value && (
+        <button
+          onClick={onClear}
+          className="absolute right-6 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 z-10"
+        >
+          <X className="h-3 w-3" />
+        </button>
+      )}
+    </div>
+  </div>
+);
+
 export const ApplicationsFilters: React.FC<ApplicationsFiltersProps> = ({
   filters,
   onFilterChange,
@@ -17,75 +86,6 @@ export const ApplicationsFilters: React.FC<ApplicationsFiltersProps> = ({
   const clearField = (field: keyof OrphanApplicationFilters) => {
     onFilterChange(field, undefined);
   };
-
-  const FilterInput: React.FC<{
-    label: string;
-    value: string | undefined;
-    onChange: (value: string) => void;
-    onClear: () => void;
-    placeholder: string;
-    type?: string;
-  }> = ({ label, value, onChange, onClear, placeholder, type = "text" }) => (
-    <div className="relative">
-      <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-        {label}
-      </label>
-      <div className="relative">
-        <input
-          type={type}
-          value={value || ''}
-          onChange={(e) => onChange(e.target.value || '')}
-          placeholder={placeholder}
-          className="w-full px-3 py-2 pr-8 border border-gray-300 dark:border-gray-600 rounded-md text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
-        />
-        {value && (
-          <button
-            onClick={onClear}
-            className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-          >
-            <X className="h-3 w-3" />
-          </button>
-        )}
-      </div>
-    </div>
-  );
-
-  const FilterSelect: React.FC<{
-    label: string;
-    value: string | undefined;
-    onChange: (value: string) => void;
-    onClear: () => void;
-    options: { value: string; label: string }[];
-    placeholder: string;
-  }> = ({ label, value, onChange, onClear, options, placeholder }) => (
-    <div className="relative">
-      <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-        {label}
-      </label>
-      <div className="relative">
-        <select
-          value={value || ''}
-          onChange={(e) => onChange(e.target.value || '')}
-          className="w-full px-3 py-2 pr-8 border border-gray-300 dark:border-gray-600 rounded-md text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary-500 focus:border-primary-500 appearance-none"
-        >
-          <option value="">{placeholder}</option>
-          {options.map(option => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-        {value && (
-          <button
-            onClick={onClear}
-            className="absolute right-6 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 z-10"
-          >
-            <X className="h-3 w-3" />
-          </button>
-        )}
-      </div>
-    </div>
-  );
 
   return (
     <div className="border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 animate-slide-down">
@@ -107,11 +107,11 @@ export const ApplicationsFilters: React.FC<ApplicationsFiltersProps> = ({
               placeholder="Search by ID..."
             />
             <FilterInput
-              label="BC Registration"
-              value={filters.bcRegistration}
-              onChange={(value) => onFilterChange('bcRegistration', value)}
-              onClear={() => clearField('bcRegistration')}
-              placeholder="Search by BC registration..."
+              label="Father's Name"
+              value={filters.fathersName}
+              onChange={(value) => onFilterChange('fathersName', value)}
+              onClear={() => clearField('fathersName')}
+              placeholder="Search by father's name..."
             />
             <FilterInput
               label="Permanent District"
@@ -132,11 +132,11 @@ export const ApplicationsFilters: React.FC<ApplicationsFiltersProps> = ({
               placeholder="Search by name..."
             />
             <FilterInput
-              label="Father's Name"
-              value={filters.fathersName}
-              onChange={(value) => onFilterChange('fathersName', value)}
-              onClear={() => clearField('fathersName')}
-              placeholder="Search by father's name..."
+              label="BC Registration"
+              value={filters.bcRegistration}
+              onChange={(value) => onFilterChange('bcRegistration', value)}
+              onClear={() => clearField('bcRegistration')}
+              placeholder="Search by BC registration..."
             />
             <FilterInput
               label="Permanent Sub-District"

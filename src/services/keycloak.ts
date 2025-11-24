@@ -22,7 +22,8 @@ class KeycloakService {
   private async performInit(): Promise<boolean> {
     try {
       console.log('Initializing Keycloak with config:', authConfig);
-      
+      console.log('Current URL:', window.location.href);
+
       this.keycloak = new Keycloak({
         url: authConfig.url,
         realm: authConfig.realm,
@@ -33,23 +34,52 @@ class KeycloakService {
         console.error('Keycloak auth error:', errorData);
       };
 
-      // Use 'check-sso' for public access without forcing login
+      this.keycloak.onAuthSuccess = () => {
+        console.log('Keycloak auth success');
+      };
+
+      this.keycloak.onReady = (authenticated) => {
+        console.log('Keycloak ready. Authenticated:', authenticated);
+      };
+
+      // Check if we're returning from a Keycloak redirect
+      const urlParams = new URLSearchParams(window.location.search);
+      const hasAuthParams = urlParams.has('code') || urlParams.has('state') || urlParams.has('session_state');
+
+      console.log('Has auth params:', hasAuthParams);
+
+      const savedUrl = window.location.href;
+      console.log('Saved URL before Keycloak init:', savedUrl);
+
+      // CRITICAL: Don't use onLoad for public apps - it causes redirects
+      // Instead, init without onLoad and check authentication status
       const authenticated = await this.keycloak.init({
-        onLoad: 'check-sso',
         checkLoginIframe: false,
         pkceMethod: 'S256',
         enableLogging: true,
-        useNonce: false,
-        redirectUri: window.location.origin,
         flow: 'standard'
       });
 
+      console.log('URL after Keycloak init:', window.location.href);
+      console.log('Did URL change?', savedUrl !== window.location.href);
+
       this.initialized = true;
       this.retryCount = 0;
-      
+
       console.log('Keycloak initialized. Authenticated:', authenticated);
-      
-      if (authenticated) this.setupTokenRefresh();
+      console.log('Final URL:', window.location.href);
+
+      if (authenticated) {
+        this.setupTokenRefresh();
+
+        // If we came back from Keycloak with auth params, clean the URL
+        if (hasAuthParams) {
+          console.log('Cleaning auth params from URL');
+          const cleanUrl = window.location.pathname + window.location.hash;
+          window.history.replaceState({}, document.title, cleanUrl);
+        }
+      }
+
       return authenticated;
     } catch (error) {
       console.error('Keycloak init error:', error);
@@ -105,7 +135,7 @@ class KeycloakService {
 
     try {
       await this.keycloak.login({
-        redirectUri: window.location.origin,
+        redirectUri: window.location.href,
         prompt: 'login'
       });
     } catch (error) {

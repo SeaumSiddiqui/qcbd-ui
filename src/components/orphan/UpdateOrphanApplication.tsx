@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { OrphanApplication, ApplicationStatus } from '../../types';
 import { useAuth } from '../../hooks/useAuth';
 import { useToast } from '../ui/Toast';
@@ -7,17 +8,11 @@ import { OrphanApplicationForm } from './OrphanApplicationForm';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
 import { StatusChangeModal } from './shared/StatusChangeModal';
 
-interface UpdateOrphanApplicationProps {
-  applicationId: string;
-  onCancel?: () => void;
-  onSave?: (application: OrphanApplication) => void;
-}
+interface UpdateOrphanApplicationProps {}
 
-export const UpdateOrphanApplication: React.FC<UpdateOrphanApplicationProps> = ({
-  applicationId,
-  onCancel,
-  onSave
-}) => {
+export const UpdateOrphanApplication: React.FC<UpdateOrphanApplicationProps> = () => {
+  const { id: applicationId } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const { hasAnyRole, isAdmin, isAuthenticator } = useAuth();
   const [application, setApplication] = useState<OrphanApplication | null>(null);
   const [loading, setLoading] = useState(true);
@@ -42,7 +37,7 @@ export const UpdateOrphanApplication: React.FC<UpdateOrphanApplicationProps> = (
       } catch (error) {
         console.error('Failed to load application:', error);
         showToast('error', 'Load Failed', 'Failed to load application. Please try again.');
-        onCancel?.();
+        navigate('/applications');
       } finally {
         setLoading(false);
       }
@@ -51,15 +46,15 @@ export const UpdateOrphanApplication: React.FC<UpdateOrphanApplicationProps> = (
     if (applicationId) {
       loadApplication();
     }
-  }, [applicationId, showToast, onCancel]);
+  }, [applicationId, showToast, navigate]);
 
   // Redirect if user doesn't have staff access
   useEffect(() => {
     if (!hasStaffAccess) {
       showToast('error', 'Access Denied', 'This page is only accessible to staff members.');
-      onCancel?.();
+      navigate('/applications');
     }
-  }, [hasStaffAccess, onCancel, showToast]);
+  }, [hasStaffAccess, navigate, showToast]);
 
   const handleSubmit = async (values: OrphanApplication, isSubmit = false) => {
     if (!applicationId) return;
@@ -69,11 +64,11 @@ export const UpdateOrphanApplication: React.FC<UpdateOrphanApplicationProps> = (
       const savedApplication = await applicationService.updateApplication(applicationId, values);
 
       setApplication(savedApplication);
-      onSave?.(savedApplication);
       setHasUnsavedChanges(false);
 
       if (isSubmit) {
         showToast('success', 'Application Submitted', 'Your application has been submitted successfully!');
+        navigate('/applications');
       } else {
         showToast('success', 'Application Updated', 'Your application has been updated successfully!');
       }
@@ -93,7 +88,6 @@ export const UpdateOrphanApplication: React.FC<UpdateOrphanApplicationProps> = (
       await applicationService.updateApplicationStatus(applicationId, newStatus, rejectionMessage);
       const updatedApp = await applicationService.getApplication(applicationId);
       setApplication(updatedApp);
-      onSave?.(updatedApp);
       showToast('success', 'Status Updated', `Application status changed to ${newStatus}`);
     } catch (error) {
       console.error('Failed to update status:', error);
@@ -133,7 +127,7 @@ export const UpdateOrphanApplication: React.FC<UpdateOrphanApplicationProps> = (
         profileError={null}
         isEditing={true}
         hasUnsavedChanges={hasUnsavedChanges}
-        onExit={onCancel}
+        onExit={() => navigate('/applications')}
         showStatusChangeButton={canChangeStatus}
         onStatusChange={() => setShowStatusModal(true)}
       />

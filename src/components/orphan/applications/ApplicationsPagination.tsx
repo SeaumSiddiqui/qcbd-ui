@@ -134,7 +134,7 @@ export const ApplicationsPagination: React.FC<ApplicationsPaginationProps> = ({
               onChange={(e) => setJumpToPage(e.target.value)}
               onKeyPress={handleKeyPress}
               placeholder="Page"
-              className="w-16 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+              className="w-17 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
             />
             <Button
               variant="outline"

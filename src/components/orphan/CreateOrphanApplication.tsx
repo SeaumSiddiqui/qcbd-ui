@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { OrphanApplication, ApplicationStatus, PhysicalCondition, Gender } from '../../types';
 import { useAuth } from '../../hooks/useAuth';
 import { useUserProfile } from '../../hooks/useUserProfile';
@@ -6,15 +7,10 @@ import { useToast } from '../ui/Toast';
 import { applicationService } from '../../services/applicationService';
 import { OrphanApplicationForm } from './OrphanApplicationForm';
 
-interface CreateOrphanApplicationProps {
-  onCancel?: () => void;
-  onSave?: (application: OrphanApplication) => void;
-}
+interface CreateOrphanApplicationProps {}
 
-export const CreateOrphanApplication: React.FC<CreateOrphanApplicationProps> = ({
-  onCancel,
-  onSave
-}) => {
+export const CreateOrphanApplication: React.FC<CreateOrphanApplicationProps> = () => {
+  const navigate = useNavigate();
   const { user, hasAnyRole } = useAuth();
   const [targetUserId, setTargetUserId] = useState('');
   const [userProfileLoaded, setUserProfileLoaded] = useState(false);
@@ -24,7 +20,9 @@ export const CreateOrphanApplication: React.FC<CreateOrphanApplicationProps> = (
   const { showToast } = useToast();
 
   const { data: userProfile, loading: profileLoading, error: profileError } = useUserProfile(targetUserId);
-  
+
+  const hasStaffAccess = hasAnyRole(['app-agent', 'app-authenticator', 'app-admin']);
+
   const initialValues: OrphanApplication = {
     status: ApplicationStatus.NEW,   
     primaryInformation: {
@@ -87,8 +85,6 @@ export const CreateOrphanApplication: React.FC<CreateOrphanApplicationProps> = (
     }
   };
 
-  const hasStaffAccess = hasAnyRole(['app-agent', 'app-authenticator', 'app-admin']);
-
   // Auto-fill BC Registration from user profile
   useEffect(() => {
     if (userProfile && !userProfileLoaded) {
@@ -111,14 +107,6 @@ export const CreateOrphanApplication: React.FC<CreateOrphanApplicationProps> = (
     }
   }, [profileError, targetUserId, errorShownForUserId, showToast]);
 
-  // Redirect if user doesn't have staff access
-  useEffect(() => {
-    if (!hasStaffAccess) {
-      showToast('error', 'Access Denied', 'This page is only accessible to staff members.');
-      onCancel?.();
-    }
-  }, [hasStaffAccess, onCancel, showToast]);
-
   const handleSubmit = async (values: OrphanApplication, isSubmit = false) => {
     const updatedApplication: OrphanApplication = { 
       ...values,
@@ -139,12 +127,12 @@ export const CreateOrphanApplication: React.FC<CreateOrphanApplicationProps> = (
     try {
       setSaving(true);
       const savedApplication = await applicationService.createApplication(updatedApplication);
-      
-      onSave?.(savedApplication);
+
       setHasUnsavedChanges(false);
 
       if (isSubmit) {
         showToast('success', 'Application Submitted', 'Your application has been submitted successfully!');
+        navigate('/applications');
       } else {
         showToast('success', 'Application Saved', 'Your application has been saved successfully!');
       }
@@ -200,7 +188,7 @@ export const CreateOrphanApplication: React.FC<CreateOrphanApplicationProps> = (
       profileError={profileError}
       isEditing={false}
       hasUnsavedChanges={hasUnsavedChanges}
-      onExit={onCancel}
+      onExit={() => navigate('/applications')}
     />
   );
 };

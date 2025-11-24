@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { X, Maximize2, Printer, Download, FileText, Image as ImageIcon, ChevronLeft, AlertTriangle } from 'lucide-react';
 import { OrphanApplication, DocumentType, ApplicationStatus } from '../../types';
 import { applicationService } from '../../services/applicationService';
@@ -12,10 +13,7 @@ import { Carousel } from '../ui/Carousel';
 import { StatusChangeModal } from './shared/StatusChangeModal';
 import { useAuth } from '../../hooks/useAuth';
 
-interface OrphanApplicationViewProps {
-  applicationId: string;
-  onBack: () => void;
-}
+interface OrphanApplicationViewProps {}
 
 interface DocumentItem {
   type: DocumentType | 'APPLICATION_FORM';
@@ -24,10 +22,9 @@ interface DocumentItem {
   isLoading?: boolean;
 }
 
-export const OrphanApplicationView: React.FC<OrphanApplicationViewProps> = ({
-  applicationId,
-  onBack
-}) => {
+export const OrphanApplicationView: React.FC<OrphanApplicationViewProps> = () => {
+  const { id: applicationId } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [application, setApplication] = useState<OrphanApplication | null>(null);
   const [documents, setDocuments] = useState<DocumentItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -55,6 +52,11 @@ export const OrphanApplicationView: React.FC<OrphanApplicationViewProps> = ({
   }, [fullscreenDoc]);
 
   const loadApplicationData = async () => {
+    if (!applicationId) {
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       const appData = await applicationService.getApplication(applicationId);
@@ -214,7 +216,7 @@ export const OrphanApplicationView: React.FC<OrphanApplicationViewProps> = ({
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Application Not Found</h2>
-          <Button onClick={onBack}>Go Back</Button>
+          <Button onClick={() => navigate('/applications')}>Go Back</Button>
         </div>
       </div>
     );
@@ -229,7 +231,7 @@ export const OrphanApplicationView: React.FC<OrphanApplicationViewProps> = ({
           <div className="mb-8">
             <Button
               variant="outline"
-              onClick={onBack}
+              onClick={() => navigate('/applications')}
               className="mb-4"
             >
               <ChevronLeft className="h-4 w-4 mr-2" />

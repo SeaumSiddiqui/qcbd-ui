@@ -1,12 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { User, Settings, LayoutDashboard, LogOut, ChevronDown } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 
-interface UserMenuProps {
-  onNavigateToProfile?: () => void;
-}
-
-export const UserMenu: React.FC<UserMenuProps> = ({ onNavigateToProfile }) => {
+export const UserMenu: React.FC = () => {
+  const navigate = useNavigate();
   const { user, logout } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -81,7 +79,7 @@ export const UserMenu: React.FC<UserMenuProps> = ({ onNavigateToProfile }) => {
             <button
               onClick={() => {
                 setIsOpen(false);
-                onNavigateToProfile?.();
+                navigate('/profile');
               }}
               className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
             >
@@ -92,7 +90,7 @@ export const UserMenu: React.FC<UserMenuProps> = ({ onNavigateToProfile }) => {
             <button
               onClick={() => {
                 setIsOpen(false);
-                // Navigate to dashboard
+                navigate('/');
               }}
               className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
             >
@@ -103,7 +101,7 @@ export const UserMenu: React.FC<UserMenuProps> = ({ onNavigateToProfile }) => {
             <button
               onClick={() => {
                 setIsOpen(false);
-                // Navigate to settings
+                navigate('/profile');
               }}
               className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
             >
