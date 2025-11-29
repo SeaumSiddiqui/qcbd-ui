@@ -1,5 +1,5 @@
 import React from 'react';
-import { Save, Send, AlertCircle } from 'lucide-react';
+import { Save, Send, AlertCircle, Eye } from 'lucide-react';
 import { Button } from '../../ui/Button';
 import { ApplicationStatus, ValidationError } from '../../../types';
 
@@ -10,6 +10,7 @@ interface FormActionsProps {
   hasUnsavedChanges: boolean;
   onSave: () => Promise<void>;
   onSubmit: () => Promise<void>;
+  onPreview?: () => void;
   isFormDisabled?: boolean;
 }
 
@@ -20,6 +21,7 @@ export const FormActions: React.FC<FormActionsProps> = ({
   hasUnsavedChanges,
   onSave,
   onSubmit,
+  onPreview,
   isFormDisabled = false
 }) => {
   const getStatusIcon = (status: ApplicationStatus) => {
@@ -102,6 +104,19 @@ export const FormActions: React.FC<FormActionsProps> = ({
             <Save className="h-5 w-5 mr-2" />
             Save as Draft
           </Button>
+
+          {onPreview && (
+            <Button
+              variant="outline"
+              onClick={onPreview}
+              disabled={isFormDisabled}
+              size="lg"
+              className="w-full sm:w-auto min-w-[200px] border-2 border-gray-300 dark:border-gray-600 hover:border-primary-500 dark:hover:border-primary-400 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200"
+            >
+              <Eye className="h-5 w-5 mr-2" />
+              Preview Form
+            </Button>
+          )}
         </div>
 
         {/* Status Information */}

@@ -2,13 +2,16 @@ import React from 'react';
 import { User, Mail, Phone, MapPin, CreditCard } from 'lucide-react';
 import { Card, CardHeader, CardContent } from '../../ui/Card';
 import { Badge } from '../../ui/Badge';
+import { EditableField } from './EditableField';
 import { UserProfile } from '../../../types';
 
 interface PersonalInfoProps {
   profile: UserProfile;
+  isOwnProfile: boolean;
+  onUpdateField: (field: string, value: string) => Promise<void>;
 }
 
-export const PersonalInfo: React.FC<PersonalInfoProps> = ({ profile }) => {
+export const PersonalInfo: React.FC<PersonalInfoProps> = ({ profile, isOwnProfile, onUpdateField }) => {
   return (
     <Card className="animate-slide-up">
       <CardHeader>
@@ -26,56 +29,57 @@ export const PersonalInfo: React.FC<PersonalInfoProps> = ({ profile }) => {
           </div>
         </div>
       </CardHeader>
-      
+
       <CardContent className="space-y-6">
-        {/* Basic Info */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-4">
             <div className="flex items-center space-x-3">
-              <User className="h-5 w-5 text-gray-400" />
-              <div>
+              <User className="h-5 w-5 text-gray-400 flex-shrink-0" />
+              <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium text-gray-900 dark:text-white">Username</p>
-                <p className="text-gray-600 dark:text-gray-400">{profile.username}</p>
+                <p className="text-gray-600 dark:text-gray-400 truncate">{profile.username}</p>
               </div>
             </div>
-            
+
             <div className="flex items-center space-x-3">
-              <Mail className="h-5 w-5 text-gray-400" />
-              <div>
+              <Mail className="h-5 w-5 text-gray-400 flex-shrink-0" />
+              <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium text-gray-900 dark:text-white">Email</p>
-                <p className="text-gray-600 dark:text-gray-400">{profile.email}</p>
+                <p className="text-gray-600 dark:text-gray-400 truncate">{profile.email}</p>
               </div>
             </div>
-            
-            <div className="flex items-center space-x-3">
-              <Phone className="h-5 w-5 text-gray-400" />
-              <div>
-                <p className="text-sm font-medium text-gray-900 dark:text-white">Phone</p>
-                <p className="text-gray-600 dark:text-gray-400">{profile.cell || 'Not provided'}</p>
-              </div>
-            </div>
+
+            <EditableField
+              label="Phone"
+              value={profile.cell || ''}
+              icon={<Phone className="h-5 w-5 text-gray-400 flex-shrink-0" />}
+              onSave={(value) => onUpdateField('cell', value)}
+              canEdit={isOwnProfile}
+              type="tel"
+            />
           </div>
-          
+
           <div className="space-y-4">
-            <div className="flex items-center space-x-3">
-              <MapPin className="h-5 w-5 text-gray-400" />
-              <div>
-                <p className="text-sm font-medium text-gray-900 dark:text-white">Address</p>
-                <p className="text-gray-600 dark:text-gray-400">{profile.address || 'Not provided'}</p>
-              </div>
-            </div>
-            
-            <div className="flex items-center space-x-3">
-              <CreditCard className="h-5 w-5 text-gray-400" />
-              <div>
-                <p className="text-sm font-medium text-gray-900 dark:text-white">BC Registration</p>
-                <p className="text-gray-600 dark:text-gray-400">{profile.bcregistration || 'Not provided'}</p>
-              </div>
-            </div>
+            <EditableField
+              label="Address"
+              value={profile.address || ''}
+              icon={<MapPin className="h-5 w-5 text-gray-400 flex-shrink-0" />}
+              onSave={(value) => onUpdateField('address', value)}
+              canEdit={isOwnProfile}
+              type="text"
+            />
+
+            <EditableField
+              label="BC Registration"
+              value={profile.bcregistration || ''}
+              icon={<CreditCard className="h-5 w-5 text-gray-400 flex-shrink-0" />}
+              onSave={(value) => onUpdateField('bcregistration', value)}
+              canEdit={isOwnProfile}
+              type="text"
+            />
           </div>
         </div>
 
-        {/* Account Status */}
         <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between">
             <div>
@@ -88,7 +92,6 @@ export const PersonalInfo: React.FC<PersonalInfoProps> = ({ profile }) => {
           </div>
         </div>
 
-        {/* Roles */}
         <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
           <p className="text-sm font-medium text-gray-900 dark:text-white mb-3">User Roles</p>
           <div className="flex flex-wrap gap-2">

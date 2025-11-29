@@ -12,7 +12,20 @@ export const commonValidationSchemas = {
   requiredAge: Yup.number().required('Age is required').min(0, 'Age must be 0 or greater').max(18, 'Age must be 18 or under for orphan eligibility'),
   requiredDate: Yup.date().required('Please select a date').max(new Date(), 'Date cannot be in the future'),
   optionalDate: Yup.date().max(new Date(), 'Date cannot be in the future'),
-  phoneNumber: Yup.string().matches(/^[\+]?[0-9\-\(\)\s]+$/, 'Please enter a valid phone number').min(10, 'Phone number must be at least 10 digits'),
+  phoneNumber: Yup.string()
+    .matches(/^\+880\d{2}-\d{4}-\d{4}$/, 'Phone number must be in format +88017-0602-0534')
+    .test('valid-bd-number', 'Please enter a valid Bangladesh phone number', (value) => {
+      if (!value) return true; // Allow empty
+
+      // Strip non-digits
+      const digitsOnly = value.replace(/[^\d]/g, '');
+
+      // Remove country code (+880)
+      const afterCode = digitsOnly.slice(3);
+
+      // Must be 10 digits (Bangladesh rule)
+      return afterCode.length === 10;
+    }),
   bcRegistration: Yup.string().required('Birth Certificate Registration number is required').trim(),
   postalCode: Yup.string().matches(/^\d{4}$/, 'Postal code must be 4 digits'),
 };
@@ -84,16 +97,12 @@ export const basicInformationSchema = Yup.object({
   guardiansName: commonValidationSchemas.optionalString,
   guardiansRelation: commonValidationSchemas.optionalString,
   nid: commonValidationSchemas.optionalString,
-  cell1: commonValidationSchemas.phoneNumber,
+  cell1: Yup.string().when('$isSubmitting', {
+    is: true,
+    then: (schema) => commonValidationSchemas.phoneNumber.required('Primary contact number is required'),
+    otherwise: (schema) => commonValidationSchemas.phoneNumber,
+  }),
   cell2: commonValidationSchemas.phoneNumber,
-});
-
-// Verification Schema
-export const verificationSchema = Yup.object({
-  agentUserId: commonValidationSchemas.optionalString,
-  authenticatorUserId: commonValidationSchemas.optionalString,
-  investigatorUserId: commonValidationSchemas.optionalString,
-  qcSwdUserId: commonValidationSchemas.optionalString,
 });
 
 // Complete Orphan Application Schema
@@ -102,7 +111,6 @@ export const orphanApplicationSchema = Yup.object({
   address: addressSchema,
   familyMembers: Yup.array().of(familyMemberSchema),
   basicInformation: basicInformationSchema,
-  verification: verificationSchema,
 });
 
 // User Creation Schema

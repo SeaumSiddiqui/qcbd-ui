@@ -1,41 +1,27 @@
 import React from 'react';
 import { FormikProps } from 'formik';
-import { User, Calendar, Heart, GraduationCap, Users } from 'lucide-react';
-import { FormField } from '../ui/FormField';
-import { FormSelect } from '../ui/FormSelect';
-import { FormSection } from '../ui/FormSection';
+import { User, Calendar, Heart, GraduationCap, Users, DollarSign } from 'lucide-react';
 import { Gender, MothersStatus, OrphanApplication } from '../../types';
 import { UserProfile } from '../../types';
 
 interface PrimaryInformationFormikProps {
   formik: FormikProps<OrphanApplication>;
   userProfile?: UserProfile | null;
+  isEditing?: boolean;
 }
 
 export const PrimaryInformationFormik: React.FC<PrimaryInformationFormikProps> = ({
   formik,
-  userProfile
+  userProfile,
+  isEditing = false
 }) => {
-  const genderOptions = [
-    { value: Gender.MALE, label: 'Male' },
-    { value: Gender.FEMALE, label: 'Female' },
-  ];
-
-  const mothersStatusOptions = [
-    { value: MothersStatus.WIDOWED, label: 'Widowed' },
-    { value: MothersStatus.REMARRIED, label: 'Remarried' },
-    { value: MothersStatus.DEAD, label: 'Dead' },
-  ];
-
   const handleSiblingsChange = (count: number) => {
     formik.setFieldValue('primaryInformation.numOfSiblings', count);
-    
-    // Update family members array to match siblings count
+
     const currentMembers = formik.values.familyMembers || [];
     let updatedMembers = [...currentMembers];
 
     if (count > currentMembers.length) {
-      // Add new family members
       for (let i = currentMembers.length; i < count; i++) {
         updatedMembers.push({
           name: '',
@@ -47,161 +33,341 @@ export const PrimaryInformationFormik: React.FC<PrimaryInformationFormikProps> =
         });
       }
     } else if (count < currentMembers.length) {
-      // Remove excess family members from the end
       updatedMembers = updatedMembers.slice(0, count);
     }
 
     formik.setFieldValue('familyMembers', updatedMembers);
   };
 
+  const getFieldError = (fieldName: string) => {
+    const keys = fieldName.split('.');
+    let error: any = formik.errors;
+    let touched: any = formik.touched;
+
+    for (const key of keys) {
+      error = error?.[key];
+      touched = touched?.[key];
+    }
+
+    return touched && error ? error : null;
+  };
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Basic Information */}
-      <FormSection
-        title="প্রাথমিক তথ্য"
-        description="এতিমের জন্মনিবন্ধন সদৃশ তথ্য প্রদান করুন"
-        icon={User}
-        gradient="from-primary-500 to-primary-600"
-      >
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <FormField
-            name="primaryInformation.fullName"
-            label="সম্পূর্ণ নাম"
-            placeholder="Enter full name"
-            required
-          />
-
-          <FormField
-            name="primaryInformation.dateOfBirth"
-            label="জন্মতারিখ"
-            type="date"
-            required
-          />
-
-          <FormField
-            name="primaryInformation.bcRegistration"
-            label="জন্মনিবন্ধন নম্বর"
-            placeholder="Enter BC registration number"
-            required
-            readOnly
-            autoFilled={!!userProfile}
-            helpText="BC Registration cannot be modified after creation."
-          />
-
-          <FormField
-            name="primaryInformation.age"
-            label="বয়স"
-            type="number"
-            placeholder="Enter age"
-            min={0}
-            max={18}
-            required
-          />
-
-          <FormSelect
-            name="primaryInformation.gender"
-            label="লিঙ্গ"
-            options={genderOptions}
-            placeholder="Select gender"
-            required
-          />
-
-
-          <FormField
-            name="primaryInformation.placeOfBirth"
-            label="জন্মস্থান"
-            placeholder="Enter place of birth"
-          />
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div className="border-b border-gray-200 dark:border-gray-700 px-6 py-4 bg-gray-50 dark:bg-gray-800/50">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center w-10 h-10 bg-primary-100 dark:bg-primary-900/30 rounded-lg">
+              <User className="h-5 w-5 text-primary-600 dark:text-primary-400" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">প্রাথমিক তথ্য</h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400">এতিমের জন্মনিবন্ধন সদৃশ তথ্য প্রদান করুন</p>
+            </div>
+          </div>
         </div>
-      </FormSection>
+
+        <div className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Full Name */}
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                সম্পূর্ণ নাম <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                name="primaryInformation.fullName"
+                value={formik.values.primaryInformation?.fullName || ''}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                className="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-900/50 focus:border-primary-500 transition-colors"
+                placeholder="Enter full name"
+              />
+              {getFieldError('primaryInformation.fullName') && (
+                <p className="text-xs text-red-600 dark:text-red-400">{getFieldError('primaryInformation.fullName')}</p>
+              )}
+            </div>
+
+            {/* Date of Birth */}
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                জন্মতারিখ <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="date"
+                name="primaryInformation.dateOfBirth"
+                value={formik.values.primaryInformation?.dateOfBirth || ''}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                className="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-900/50 focus:border-primary-500 transition-colors"
+              />
+              {getFieldError('primaryInformation.dateOfBirth') && (
+                <p className="text-xs text-red-600 dark:text-red-400">{getFieldError('primaryInformation.dateOfBirth')}</p>
+              )}
+            </div>
+
+            {/* BC Registration */}
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                জন্মনিবন্ধন নম্বর <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                name="primaryInformation.bcRegistration"
+                value={formik.values.primaryInformation?.bcRegistration || ''}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                readOnly={isEditing || !!userProfile}
+                className={`w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-900/50 focus:border-primary-500 transition-colors ${
+                  (isEditing || userProfile) ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed' : 'bg-white dark:bg-gray-900'
+                }`}
+                placeholder="Enter BC registration number"
+              />
+              {(isEditing || userProfile) && (
+                <p className="text-xs text-gray-500 dark:text-gray-400">BC Registration cannot be modified after creation.</p>
+              )}
+              {getFieldError('primaryInformation.bcRegistration') && (
+                <p className="text-xs text-red-600 dark:text-red-400">{getFieldError('primaryInformation.bcRegistration')}</p>
+              )}
+            </div>
+
+            {/* Age */}
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                বয়স <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="number"
+                name="primaryInformation.age"
+                value={formik.values.primaryInformation?.age || ''}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                min={0}
+                max={18}
+                className="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-900/50 focus:border-primary-500 transition-colors"
+                placeholder="Enter age"
+              />
+              {getFieldError('primaryInformation.age') && (
+                <p className="text-xs text-red-600 dark:text-red-400">{getFieldError('primaryInformation.age')}</p>
+              )}
+            </div>
+
+            {/* Gender */}
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                লিঙ্গ <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <select
+                  name="primaryInformation.gender"
+                  value={formik.values.primaryInformation?.gender || ''}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  className="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-900/50 focus:border-primary-500 appearance-none cursor-pointer transition-colors"
+                >
+                  <option value="">নির্বাচন করুন</option>
+                  <option value={Gender.MALE}>ছেলে</option>
+                  <option value={Gender.FEMALE}>মেয়ে</option>
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400">
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+              </div>
+              {getFieldError('primaryInformation.gender') && (
+                <p className="text-xs text-red-600 dark:text-red-400">{getFieldError('primaryInformation.gender')}</p>
+              )}
+            </div>
+
+            {/* Place of Birth */}
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                জন্মস্থান
+              </label>
+              <input
+                type="text"
+                name="primaryInformation.placeOfBirth"
+                value={formik.values.primaryInformation?.placeOfBirth || ''}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                className="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-900/50 focus:border-primary-500 transition-colors"
+                placeholder="Enter place of birth"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Parents Information */}
-      <FormSection
-        title="পিতা-মাতার তথ্য"
-        description="পিতা-মাতার জাতীয়তা পরিচয়পত্র সদৃশ তথ্য প্রদান করুন"
-        icon={Heart}
-        gradient="from-pink-500 to-rose-500"
-      >
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Father Information */}
-          <div className="space-y-6">
-            <h4 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
-              <div className="w-2 h-2 bg-blue-500 rounded-full mr-3"></div>
-              পিতার তথ্যাবলি
-            </h4>
-            
-            <FormField
-              name="primaryInformation.fathersName"
-              label="পিতার নাম"
-              placeholder="Enter father's name"
-              required
-            />
-
-            <FormField
-              name="primaryInformation.dateOfDeath"
-              label="মৃত্যু তারিখ"
-              type="date"
-            />
-
-            <FormField
-              name="primaryInformation.causeOfDeath"
-              label="মৃত্যুর কারণ"
-              placeholder="Describe the cause of death"
-            />
-          </div>
-
-          {/* Mother Information */}
-          <div className="space-y-6">
-            <h4 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
-              <div className="w-2 h-2 bg-pink-500 rounded-full mr-3"></div>
-              মাতার তথ্যাবলি
-            </h4>
-            
-            <FormField
-              name="primaryInformation.mothersName"
-              label="মাতার নাম"
-              placeholder="Enter mother's name"
-            />
-
-            <FormSelect
-              name="primaryInformation.mothersStatus"
-              label="মাতার অবস্থা"
-              options={mothersStatusOptions}
-              placeholder="Select status"
-            />
-
-            <FormField
-              name="primaryInformation.mothersOccupation"
-              label="মাতার পেশা"
-              placeholder="Enter mother's occupation"
-            />
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div className="border-b border-gray-200 dark:border-gray-700 px-6 py-4 bg-gray-50 dark:bg-gray-800/50">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center w-10 h-10 bg-primary-100 dark:bg-primary-900/30 rounded-lg">
+              <Heart className="h-5 w-5 text-primary-600 dark:text-primary-400" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">পিতা-মাতার তথ্য</h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400">পিতা-মাতার জাতীয়তা পরিচয়পত্র সদৃশ তথ্য প্রদান করুন</p>
+            </div>
           </div>
         </div>
-      </FormSection>
+
+        <div className="p-6 space-y-8">
+          {/* Father Information - 3 columns inline */}
+          <div className="space-y-4">
+            <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2 pb-2 border-b border-gray-200 dark:border-gray-700">
+              পিতার তথ্যাবলি
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  পিতার নাম <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="primaryInformation.fathersName"
+                  value={formik.values.primaryInformation?.fathersName || ''}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  className="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-900/50 focus:border-primary-500 transition-colors"
+                  placeholder="Enter father's name"
+                />
+                {getFieldError('primaryInformation.fathersName') && (
+                  <p className="text-xs text-red-600 dark:text-red-400">{getFieldError('primaryInformation.fathersName')}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  মৃত্যু তারিখ
+                </label>
+                <input
+                  type="date"
+                  name="primaryInformation.dateOfDeath"
+                  value={formik.values.primaryInformation?.dateOfDeath || ''}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  className="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-900/50 focus:border-primary-500 transition-colors"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  মৃত্যুর কারণ
+                </label>
+                <input
+                  type="text"
+                  name="primaryInformation.causeOfDeath"
+                  value={formik.values.primaryInformation?.causeOfDeath || ''}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  className="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-900/50 focus:border-primary-500 transition-colors"
+                  placeholder="Describe the cause of death"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Mother Information - 3 columns inline */}
+          <div className="space-y-4">
+            <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2 pb-2 border-b border-gray-200 dark:border-gray-700">
+              মাতার তথ্যাবলি
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  মাতার নাম
+                </label>
+                <input
+                  type="text"
+                  name="primaryInformation.mothersName"
+                  value={formik.values.primaryInformation?.mothersName || ''}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  className="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-900/50 focus:border-primary-500 transition-colors"
+                  placeholder="Enter mother's name"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  মাতার পেশা
+                </label>
+                <input
+                  type="text"
+                  name="primaryInformation.mothersOccupation"
+                  value={formik.values.primaryInformation?.mothersOccupation || ''}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  className="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-900/50 focus:border-primary-500 transition-colors"
+                  placeholder="Enter mother's occupation"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  মাতার অবস্থা
+                </label>
+                <div className="relative">
+                  <select
+                    name="primaryInformation.mothersStatus"
+                    value={formik.values.primaryInformation?.mothersStatus || ''}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    className="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-900/50 focus:border-primary-500 appearance-none cursor-pointer transition-colors"
+                  >
+                    <option value="">নির্বাচন করুন</option>
+                    <option value={MothersStatus.WIDOWED}>বিধবা</option>
+                    <option value={MothersStatus.REMARRIED}>পুনর্বিবাহিত</option>
+                    <option value={MothersStatus.DEAD}>মৃত</option>
+                  </select>
+                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400">
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Financial & Family Information */}
-      <FormSection
-        title="অর্থনৈতিক ও পারিবারিক তথ্য"
-        description="পরিবারের আর্থিক অবস্থা ও সদস্যদের তথ্য প্রদান করুন"
-        icon={Users}
-        gradient="from-emerald-500 to-teal-500"
-      >
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <FormField
-            name="primaryInformation.fixedAssets"
-            label="স্থাবর সম্পত্তি"
-            type="textarea"
-            placeholder="Describe fixed assets"
-            rows={3}
-          />
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div className="border-b border-gray-200 dark:border-gray-700 px-6 py-4 bg-gray-50 dark:bg-gray-800/50">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center w-10 h-10 bg-primary-100 dark:bg-primary-900/30 rounded-lg">
+              <DollarSign className="h-5 w-5 text-primary-600 dark:text-primary-400" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">অর্থনৈতিক ও পারিবারিক তথ্য</h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400">পরিবারের আর্থিক অবস্থা ও সদস্যদের তথ্য প্রদান করুন</p>
+            </div>
+          </div>
+        </div>
 
-          <FormField
-            name="primaryInformation.annualIncome"
-            label="বার্ষিক আয়"
-            placeholder="Enter annual income"
-          />
+        <div className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Annual Income */}
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                বার্ষিক আয়
+              </label>
+              <input
+                type="text"
+                name="primaryInformation.annualIncome"
+                value={formik.values.primaryInformation?.annualIncome || ''}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                className="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-900/50 focus:border-primary-500 transition-colors"
+                placeholder="Enter annual income"
+              />
+            </div>
 
-          <div>
+            {/* Number of Siblings */}
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 ভাইবোনের সংখ্যা
@@ -211,40 +377,84 @@ export const PrimaryInformationFormik: React.FC<PrimaryInformationFormikProps> =
                 value={formik.values.primaryInformation?.numOfSiblings || 0}
                 onChange={(e) => handleSiblingsChange(parseInt(e.target.value) || 0)}
                 min={0}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg transition-all duration-200 dark:text-white dark:bg-gray-700 focus:outline-none focus:ring-0 focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                className="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-900/50 focus:border-primary-500 transition-colors"
                 placeholder="Enter number of siblings"
               />
               <p className="text-xs text-gray-500 dark:text-gray-400">
                 This will automatically add/remove rows in the Family Members section
               </p>
             </div>
+
+            {/* Fixed Assets - Full Width in Second Row */}
+            <div className="space-y-2 md:col-span-3">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                স্থাবর সম্পত্তি
+              </label>
+              <textarea
+                name="primaryInformation.fixedAssets"
+                value={formik.values.primaryInformation?.fixedAssets || ''}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                rows={3}
+                className="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-900/50 focus:border-primary-500 transition-colors resize-none"
+                placeholder="Describe fixed assets"
+              />
+            </div>
           </div>
         </div>
-      </FormSection>
+      </div>
 
       {/* Education Information */}
-      <FormSection
-        title="শিক্ষাগত তথ্য"
-        description="এতিমের বর্তমান শিক্ষাগত তথ্য প্রদান করুন"
-        icon={GraduationCap}
-        gradient="from-purple-500 to-indigo-500"
-      >
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <FormField
-            name="primaryInformation.academicInstitution"
-            label="শিক্ষা প্রতিষ্ঠান"
-            placeholder="Enter school/institution name"
-          />
-
-          <FormField
-            name="primaryInformation.grade"
-            label="শ্রেণী"
-            type="number"
-            placeholder="Enter current grade/class"
-            min={0}
-          />
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div className="border-b border-gray-200 dark:border-gray-700 px-6 py-4 bg-gray-50 dark:bg-gray-800/50">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center w-10 h-10 bg-primary-100 dark:bg-primary-900/30 rounded-lg">
+              <GraduationCap className="h-5 w-5 text-primary-600 dark:text-primary-400" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">শিক্ষাগত তথ্য</h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400">এতিমের বর্তমান শিক্ষাগত তথ্য প্রদান করুন</p>
+            </div>
+          </div>
         </div>
-      </FormSection>
+
+        <div className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Academic Institution - 2 columns */}
+            <div className="space-y-2 md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                শিক্ষা প্রতিষ্ঠান
+              </label>
+              <input
+                type="text"
+                name="primaryInformation.academicInstitution"
+                value={formik.values.primaryInformation?.academicInstitution || ''}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                className="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-900/50 focus:border-primary-500 transition-colors"
+                placeholder="Enter school/institution name"
+              />
+            </div>
+
+            {/* Grade - 1 column */}
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                শ্রেণী
+              </label>
+              <input
+                type="number"
+                name="primaryInformation.grade"
+                value={formik.values.primaryInformation?.grade || ''}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                min={0}
+                className="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-900/50 focus:border-primary-500 transition-colors"
+                placeholder="Enter current grade/class"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

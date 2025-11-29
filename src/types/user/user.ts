@@ -2,11 +2,15 @@ export interface UserCreateRequest {
   username: string;
   email: string;
   password: string;
-  isEnabled: boolean;
-  groups: string[];
+  userType: string;
   cell?: string;
   address?: string;
-  beneficiaryCreateRequest?: BeneficiaryCreateRequest;
+  bcregistration?: string;
+  accountTitle?: string;
+  accountNumber?: string;
+  bankTitle?: string;
+  branch?: string;
+  routingNumber?: string;
 }
 
 export interface BeneficiaryCreateRequest {

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Formik, FormikProps } from 'formik';
 import { AlertCircle, CheckCircle, Clock, X, User, AlertTriangle } from 'lucide-react';
-import { OrphanApplication, ApplicationStatus, PhysicalCondition, Gender, UserProfile } from '../../types';
+import { OrphanApplication, ApplicationStatus, PhysicalCondition, Gender, UserProfile, Verification } from '../../types';
 import { orphanApplicationSchema, partialOrphanApplicationSchema } from '../../utils/validationSchemas';
 import { scrollToError } from '../../utils/validation';
 import { PrimaryInformationFormik } from '../forms/PrimaryInformationFormik';
@@ -10,7 +10,6 @@ import { FamilyMembersFormik } from '../forms/FamilyMembersFormik';
 import { BasicInformationFormik } from '../forms/BasicInformationFormik';
 import { VerificationForm } from '../orphan/forms/VerificationForm';
 import { DocumentsForm } from '../orphan/forms/DocumentsForm';
-import { ApplicationDocumentView } from '../orphan/shared/ApplicationDocumentView';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { useToast } from '../ui/Toast';
@@ -18,9 +17,10 @@ import { Carousel } from '../ui/Carousel';
 import { FormTabs } from '../orphan/shared/FormTabs';
 import { FormNavigation } from '../orphan/shared/FormNavigation';
 import { UserSelector } from '../orphan/shared/UserSelector';
+import { ApplicationDocumentView } from '../orphan/shared/ApplicationDocumentView';
 import { useAuth } from '../../hooks/useAuth';
 
-interface OrphanApplicationFormikProps {
+interface OrphanApplicationFormProps {
   initialValues: OrphanApplication;
   onSubmit: (values: OrphanApplication, isSubmit?: boolean) => Promise<void>;
   saving: boolean;
@@ -32,9 +32,11 @@ interface OrphanApplicationFormikProps {
   isEditing?: boolean;
   hasUnsavedChanges: boolean;
   onExit?: () => void;
+  showStatusChangeButton?: boolean;
+  onStatusChange?: () => void;
 }
 
-export const OrphanApplicationFormik: React.FC<OrphanApplicationFormikProps> = ({
+export const OrphanApplicationForm: React.FC<OrphanApplicationFormProps> = ({
   initialValues,
   onSubmit,
   saving,
@@ -45,11 +47,14 @@ export const OrphanApplicationFormik: React.FC<OrphanApplicationFormikProps> = (
   profileError,
   isEditing = false,
   hasUnsavedChanges,
-  onExit
+  onExit,
+  showStatusChangeButton = false,
+  onStatusChange
 }) => {
   const [activeTab, setActiveTab] = useState('primary');
   const [showExitWarning, setShowExitWarning] = useState(false);
-  const [showDocumentView, setShowDocumentView] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
+  const [previewData, setPreviewData] = useState<OrphanApplication | null>(null);
   const { user, hasAnyRole } = useAuth();
   const { showToast } = useToast();
 
@@ -101,65 +106,84 @@ export const OrphanApplicationFormik: React.FC<OrphanApplicationFormikProps> = (
   const handleSave = async (values: OrphanApplication, formik: FormikProps<OrphanApplication>, submit = false) => {
     try {
       const validationSchema = submit ? orphanApplicationSchema : partialOrphanApplicationSchema;
-      
+
       await validationSchema.validate(values, { abortEarly: false });
-      
+
       let newStatus = values.status;
-      
+
       if (submit) {
-        if (values.status === ApplicationStatus.INCOMPLETE || values.status === ApplicationStatus.REJECTED) {
+        // Submit button: Change NEW, INCOMPLETE, or REJECTED to COMPLETE
+        if ([ApplicationStatus.NEW, ApplicationStatus.INCOMPLETE, ApplicationStatus.REJECTED].includes(values.status)) {
           newStatus = ApplicationStatus.COMPLETE;
           setTimeout(() => {
             setActiveTab('documents');
             showToast('success', 'Form Completed', 'Please upload all required documents to submit the application.');
           }, 1000);
         }
+      } else {
+        // Save Draft button: Change NEW to INCOMPLETE
+        if (values.status === ApplicationStatus.NEW) {
+          newStatus = ApplicationStatus.INCOMPLETE;
+        }
       }
 
-      // Ensure verification object exists before accessing
-      const verification = values.verification || {};
-      
-      // Capture agent signature when creating/saving application
-      if (!isEditing && !verification.agentUserId && user?.id) {
-        verification.agentUserId = user.id;
+      if (!isEditing && !values.verification?.agentUserId) {
+        try {
+          const currentUser = user;
+          if (currentUser?.id) {
+            values.verification = {
+              ...values.verification,
+              agentUserId: currentUser.id
+            };
+          }
+        } catch (error) {
+          console.warn('Failed to capture agent user ID:', error);
+        }
       }
 
       const applicationToSave = {
         ...values,
         status: newStatus,
-        verification,
         beneficiaryUserId: isEditing ? values.beneficiaryUserId : targetUserId
       };
 
       await onSubmit(applicationToSave, submit);
     } catch (error: any) {
-      if (error.inner) {
-        // Handle validation errors
+      if (error.inner && error.inner.length > 0) {
         const errors: { [key: string]: string } = {};
+
         error.inner.forEach((err: any) => {
           errors[err.path] = err.message;
         });
+
         formik.setErrors(errors);
-        
-        // Get first error for scrolling
+
         const firstError = error.inner[0];
-        if (firstError) {
-          const tabName = getTabNameFromPath(firstError.path);
-          const tabId = tabs.find(tab => tab.label === tabName)?.id;
-          if (tabId && tabId !== activeTab) {
-            setActiveTab(tabId);
-            // Wait for tab switch before scrolling
-            setTimeout(() => {
-              scrollToError(firstError.path);
-            }, 100);
-          } else {
+        const firstErrorTab = getTabNameFromPath(firstError.path);
+
+        showToast('error', 'Validation Error', firstError.message);
+
+        const tabMapping: { [key: string]: string } = {
+          'primaryInformation': 'primary',
+          'address': 'address',
+          'familyMembers': 'family',
+          'basicInformation': 'basic',
+          'documents': 'documents',
+          'verification': 'verification'
+        };
+
+        const targetTab = tabMapping[firstErrorTab.split('.')[0]];
+        if (targetTab && targetTab !== activeTab) {
+          setActiveTab(targetTab);
+          setTimeout(() => {
             scrollToError(firstError.path);
-          }
-          showToast('error', 'Validation Error', firstError.message);
+          }, 100);
+        } else {
+          scrollToError(firstError.path);
         }
       } else {
-        console.error('Submission error:', error);
-        showToast('error', 'Submission Failed', 'Please try again');
+        console.error('Save error:', error);
+        showToast('error', 'Save Failed', 'An unexpected error occurred');
       }
     }
   };
@@ -266,7 +290,11 @@ export const OrphanApplicationFormik: React.FC<OrphanApplicationFormikProps> = (
     }
   };
 
-  // Show message when no user is selected for create mode
+  const handlePreview = (values: OrphanApplication) => {
+    setPreviewData(values);
+    setShowPreview(true);
+  };
+
   if (!isEditing && !targetUserId) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -296,7 +324,6 @@ export const OrphanApplicationFormik: React.FC<OrphanApplicationFormikProps> = (
     );
   }
 
-  // Show message when user not found for create mode
   if (!isEditing && targetUserId && profileError && !profileLoading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -326,7 +353,6 @@ export const OrphanApplicationFormik: React.FC<OrphanApplicationFormikProps> = (
     );
   }
 
-  // Only show form if user profile is loaded (for create) or we're editing
   if (!isEditing && !userProfile) {
     return null;
   }
@@ -341,7 +367,12 @@ export const OrphanApplicationFormik: React.FC<OrphanApplicationFormikProps> = (
       {(formik) => (
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
           <Carousel />
-          <FormTabs tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />
+          <FormTabs
+            tabs={tabs}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            onPreview={() => handlePreview(formik.values)}
+          />
 
           <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
             <div className="max-w-6xl mx-auto">
@@ -364,14 +395,7 @@ export const OrphanApplicationFormik: React.FC<OrphanApplicationFormikProps> = (
                       Complete all sections to submit your application
                     </p>
                   </div>
-                  <div className="flex items-center space-x-4">
-                    <Button
-                      variant="outline"
-                      onClick={() => setShowDocumentView(true)}
-                      className="flex items-center space-x-2"
-                    >
-                      <span>View Document</span>
-                    </Button>
+                  <div className="flex items-center space-x-3">
                     {getStatusIcon(formik.values.status)}
                     <Badge variant={getStatusVariant(formik.values.status)}>
                       {formik.values.status.replace('_', ' ')}
@@ -380,13 +404,29 @@ export const OrphanApplicationFormik: React.FC<OrphanApplicationFormikProps> = (
                 </div>
               </div>
 
-              {/* Tab Content */}
+              {formik.values.status === ApplicationStatus.REJECTED && formik.values.rejectionMessage && (
+                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-2xl shadow-lg p-6 mb-8">
+                  <div className="flex items-start space-x-3">
+                    <AlertTriangle className="h-6 w-6 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <h3 className="text-lg font-semibold text-red-900 dark:text-red-200 mb-2">
+                        Application Rejected
+                      </h3>
+                      <p className="text-sm text-red-800 dark:text-red-300">
+                        {formik.values.rejectionMessage}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 mb-8 overflow-hidden">
                 <div className="p-8">
                   {activeTab === 'primary' && (
                     <PrimaryInformationFormik
                       formik={formik}
                       userProfile={userProfile}
+                      isEditing={isEditing}
                     />
                   )}
                   {activeTab === 'address' && (
@@ -410,9 +450,7 @@ export const OrphanApplicationFormik: React.FC<OrphanApplicationFormikProps> = (
                   )}
                   {activeTab === 'verification' && (
                     <VerificationForm
-                      data={formik.values.verification!}
-                      onChange={(data) => formik.setFieldValue('verification', data)}
-                      errors={[]}
+                      data={formik.values.verification as Verification}
                     />
                   )}
                 </div>
@@ -427,9 +465,20 @@ export const OrphanApplicationFormik: React.FC<OrphanApplicationFormikProps> = (
                 canGoNext={canGoNext}
               />
 
-              {/* Action Buttons */}
               <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-8">
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                  {showStatusChangeButton && (
+                    <Button
+                      type="button"
+                      variant="primary"
+                      onClick={onStatusChange}
+                      size="lg"
+                      className="w-full sm:w-auto min-w-[200px]"
+                    >
+                      Change Status
+                    </Button>
+                  )}
+
                   <Button
                     type="button"
                     variant="primary"
@@ -454,7 +503,6 @@ export const OrphanApplicationFormik: React.FC<OrphanApplicationFormikProps> = (
                 </div>
               </div>
 
-              {/* Exit Warning Modal */}
               {showExitWarning && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                   <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
@@ -491,15 +539,16 @@ export const OrphanApplicationFormik: React.FC<OrphanApplicationFormikProps> = (
                   </div>
                 </div>
               )}
+
+              {previewData && (
+                <ApplicationDocumentView
+                  application={previewData}
+                  isOpen={showPreview}
+                  onClose={() => setShowPreview(false)}
+                />
+              )}
             </div>
           </div>
-
-          {/* Document View Modal */}
-          <ApplicationDocumentView
-            application={formik.values}
-            isOpen={showDocumentView}
-            onClose={() => setShowDocumentView(false)}
-          />
         </div>
       )}
     </Formik>

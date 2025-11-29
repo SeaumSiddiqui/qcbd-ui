@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Formik, FormikProps } from 'formik';
 import { AlertCircle, CheckCircle, Clock, X, User, AlertTriangle } from 'lucide-react';
-import { OrphanApplication, ApplicationStatus, PhysicalCondition, Gender, UserProfile } from '../../types';
+import { OrphanApplication, ApplicationStatus, PhysicalCondition, Gender, UserProfile, Verification } from '../../types';
 import { orphanApplicationSchema, partialOrphanApplicationSchema } from '../../utils/validationSchemas';
 import { scrollToError } from '../../utils/validation';
 import { PrimaryInformationFormik } from '../forms/PrimaryInformationFormik';
@@ -17,6 +17,7 @@ import { Carousel } from '../ui/Carousel';
 import { FormTabs } from '../orphan/shared/FormTabs';
 import { FormNavigation } from '../orphan/shared/FormNavigation';
 import { UserSelector } from '../orphan/shared/UserSelector';
+import { ApplicationDocumentView } from '../orphan/shared/ApplicationDocumentView';
 import { useAuth } from '../../hooks/useAuth';
 
 interface OrphanApplicationFormProps {
@@ -52,7 +53,8 @@ export const OrphanApplicationForm: React.FC<OrphanApplicationFormProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState('primary');
   const [showExitWarning, setShowExitWarning] = useState(false);
-  const { user, hasAnyRole } = useAuth();
+  const [showPreview, setShowPreview] = useState(false);
+  const [previewData, setPreviewData] = useState<OrphanApplication | null>(null);
   const { showToast } = useToast();
 
   const tabs = [
@@ -121,20 +123,6 @@ export const OrphanApplicationForm: React.FC<OrphanApplicationFormProps> = ({
         // Save Draft button: Change NEW to INCOMPLETE
         if (values.status === ApplicationStatus.NEW) {
           newStatus = ApplicationStatus.INCOMPLETE;
-        }
-      }
-
-      if (!isEditing && !values.verification?.agentUserId) {
-        try {
-          const currentUser = user;
-          if (currentUser?.id) {
-            values.verification = {
-              ...values.verification,
-              agentUserId: currentUser.id
-            };
-          }
-        } catch (error) {
-          console.warn('Failed to capture agent user ID:', error);
         }
       }
 
@@ -287,6 +275,11 @@ export const OrphanApplicationForm: React.FC<OrphanApplicationFormProps> = ({
     }
   };
 
+  const handlePreview = (values: OrphanApplication) => {
+    setPreviewData(values);
+    setShowPreview(true);
+  };
+
   if (!isEditing && !targetUserId) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -359,7 +352,12 @@ export const OrphanApplicationForm: React.FC<OrphanApplicationFormProps> = ({
       {(formik) => (
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
           <Carousel />
-          <FormTabs tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />
+          <FormTabs
+            tabs={tabs}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            onPreview={() => handlePreview(formik.values)}
+          />
 
           <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
             <div className="max-w-6xl mx-auto">
@@ -413,6 +411,7 @@ export const OrphanApplicationForm: React.FC<OrphanApplicationFormProps> = ({
                     <PrimaryInformationFormik
                       formik={formik}
                       userProfile={userProfile}
+                      isEditing={isEditing}
                     />
                   )}
                   {activeTab === 'address' && (
@@ -436,9 +435,7 @@ export const OrphanApplicationForm: React.FC<OrphanApplicationFormProps> = ({
                   )}
                   {activeTab === 'verification' && (
                     <VerificationForm
-                      data={formik.values.verification!}
-                      onChange={(data) => formik.setFieldValue('verification', data)}
-                      errors={[]}
+                      data={formik.values.verification as Verification}
                     />
                   )}
                 </div>
@@ -526,6 +523,14 @@ export const OrphanApplicationForm: React.FC<OrphanApplicationFormProps> = ({
                     </div>
                   </div>
                 </div>
+              )}
+
+              {previewData && (
+                <ApplicationDocumentView
+                  application={previewData}
+                  isOpen={showPreview}
+                  onClose={() => setShowPreview(false)}
+                />
               )}
             </div>
           </div>

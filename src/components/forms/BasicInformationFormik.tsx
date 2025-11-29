@@ -1,222 +1,534 @@
 import React from 'react';
 import { FormikProps } from 'formik';
-import { Home, Heart, User, Phone, Building } from 'lucide-react';
-import { FormField } from '../ui/FormField';
-import { FormSelect } from '../ui/FormSelect';
-import { FormRadioGroup } from '../ui/FormRadioGroup';
-import { FormCheckbox } from '../ui/FormCheckbox';
-import { FormSection } from '../ui/FormSection';
+import { Home, Heart, User, Phone, Building2 } from 'lucide-react';
 import { PhysicalCondition, ResidenceStatus, HouseType, OrphanApplication } from '../../types';
 
 interface BasicInformationFormikProps {
   formik: FormikProps<OrphanApplication>;
 }
 
+// Phone number formatting utility
+const formatPhoneNumber = (value: string): string => {
+  // Remove all non-digit characters except the leading +
+  const digitsOnly = value.replace(/[^\d]/g, '');
+
+  // If starts with 880, keep it; otherwise add it
+  let numbers = digitsOnly;
+  if (!numbers.startsWith('880')) {
+    numbers = '880' + numbers.replace(/^0+/, ''); // Remove leading zeros from local number
+  }
+
+  // Remove the 880 prefix for formatting
+  const localNumber = numbers.slice(3);
+
+  // Limit to 11 digits total (880 + 11 digits)
+  if (localNumber.length > 11) {
+    numbers = '880' + localNumber.slice(0, 11);
+  }
+
+  // Format as +88017-0602-0534
+  const prefix = '+880';
+  const formatted = numbers.slice(3); // Get digits after 880
+
+  if (formatted.length <= 2) {
+    return prefix + formatted;
+  } else if (formatted.length <= 6) {
+    return `${prefix}${formatted.slice(0, 2)}-${formatted.slice(2)}`;
+  } else if (formatted.length <= 10) {
+    return `${prefix}${formatted.slice(0, 2)}-${formatted.slice(2, 6)}-${formatted.slice(6)}`;
+  } else {
+    return `${prefix}${formatted.slice(0, 2)}-${formatted.slice(2, 6)}-${formatted.slice(6, 10)}`;
+  }
+};
+
+const handlePhoneChange = (value: string, fieldName: string, formik: FormikProps<OrphanApplication>) => {
+  // Don't allow deletion of +880 prefix
+  if (!value.startsWith('+880')) {
+    value = '+880' + value.replace(/^\+880/, '');
+  }
+
+  const formatted = formatPhoneNumber(value);
+  formik.setFieldValue(fieldName, formatted);
+};
+
 export const BasicInformationFormik: React.FC<BasicInformationFormikProps> = ({ formik }) => {
-  const physicalConditionOptions = [
-    { value: PhysicalCondition.HEALTHY, label: 'সুস্থ' },
-    { value: PhysicalCondition.SICK, label: 'অসুস্থ' },
-    { value: PhysicalCondition.DISABLED, label: 'প্রতিবন্ধী' },
-  ];
-
-  const residenceStatusOptions = [
-    { value: ResidenceStatus.OWN, label: 'নিজ' },
-    { value: ResidenceStatus.RENTED, label: 'ভাড়া' },
-    { value: ResidenceStatus.SHELTERED, label: 'আশ্রয়প্রাপ্ত' },
-    { value: ResidenceStatus.HOMELESS, label: 'গৃহহীন' },
-  ];
-
-  const houseTypeOptions = [
-    { value: HouseType.CONCRETE_HOUSE, label: 'পাকা বাড়ি' },
-    { value: HouseType.SEMI_CONCRETE_HOUSE, label: 'আধপাকা বাড়ি' },
-    { value: HouseType.MUD_HOUSE, label: 'কাঁচা বাড়ি' },
-  ];
-
-  const yesNoOptions = [
-    { value: true, label: 'হ্যাঁ' },
-    { value: false, label: 'না' },
-  ];
-
   const hasCriticalIllness = formik.values.basicInformation?.hasCriticalIllness;
 
+  // Initialize phone fields with +880 if empty
+  React.useEffect(() => {
+    if (!formik.values.basicInformation?.cell1) {
+      formik.setFieldValue('basicInformation.cell1', '+880');
+    }
+    if (!formik.values.basicInformation?.cell2) {
+      formik.setFieldValue('basicInformation.cell2', '+880');
+    }
+  }, []);
+
+  const getFieldError = (fieldName: string) => {
+    const keys = fieldName.split('.');
+    let error: any = formik.errors;
+    let touched: any = formik.touched;
+
+    for (const key of keys) {
+      error = error?.[key];
+      touched = touched?.[key];
+    }
+
+    return touched && error ? error : null;
+  };
+
   return (
-    <div className="space-y-8">
-      {/* Physical Condition */}
-      <FormSection
-        title="শারীরিক তথ্যাবলী"
-        description="শারীরিক অবস্থান এবং স্বাস্থ্য সংক্রান্ত তথ্য"
-        icon={Heart}
-        gradient="from-red-500 to-pink-500"
-      >
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <FormSelect
-            name="basicInformation.physicalCondition"
-            label="শারীরিক অবস্থা"
-            options={physicalConditionOptions}
-            placeholder="Select condition"
-            required
-          />
+    <div className="space-y-6">
+      {/* Physical Health Card */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div className="border-b border-gray-200 dark:border-gray-700 px-6 py-4 bg-gray-50 dark:bg-gray-800/50">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center w-10 h-10 bg-primary-100 dark:bg-primary-900/30 rounded-lg">
+              <Heart className="h-5 w-5 text-primary-600 dark:text-primary-400" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">শারীরিক তথ্যাবলী</h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400">স্বাস্থ্য ও শারীরিক অবস্থার বিবরণ</p>
+            </div>
+          </div>
+        </div>
 
-          <FormRadioGroup
-            name="basicInformation.hasCriticalIllness"
-            label="গুরুতর অসুস্থতা আছে?"
-            options={yesNoOptions}
-            required
-          />
+        <div className="p-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Physical Condition */}
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                শারীরিক অবস্থা <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <select
+                  name="basicInformation.physicalCondition"
+                  value={formik.values.basicInformation?.physicalCondition || ''}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  className={`w-full px-4 py-2.5 bg-white dark:bg-gray-900 border rounded-lg text-sm appearance-none cursor-pointer transition-colors ${
+                    getFieldError('basicInformation.physicalCondition')
+                      ? 'border-red-300 dark:border-red-700 focus:ring-2 focus:ring-red-200 dark:focus:ring-red-900/50 focus:border-red-500'
+                      : 'border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-900/50 focus:border-primary-500'
+                  }`}
+                >
+                  <option value="">নির্বাচন করুন</option>
+                  <option value={PhysicalCondition.HEALTHY}>সুস্থ</option>
+                  <option value={PhysicalCondition.SICK}>অসুস্থ</option>
+                  <option value={PhysicalCondition.DISABLED}>প্রতিবন্ধী</option>
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400">
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+              </div>
+              {getFieldError('basicInformation.physicalCondition') && (
+                <p className="text-xs text-red-600 dark:text-red-400 mt-1">
+                  {getFieldError('basicInformation.physicalCondition')}
+                </p>
+              )}
+            </div>
 
+            {/* Critical Illness */}
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                গুরুতর অসুস্থতা আছে?
+              </label>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => formik.setFieldValue('basicInformation.hasCriticalIllness', true)}
+                  className={`flex-1 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                    hasCriticalIllness === true
+                      ? 'bg-primary-600 text-white shadow-sm'
+                      : 'bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800'
+                  }`}
+                >
+                  হ্যাঁ
+                </button>
+                <button
+                  type="button"
+                  onClick={() => formik.setFieldValue('basicInformation.hasCriticalIllness', false)}
+                  className={`flex-1 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                    hasCriticalIllness === false
+                      ? 'bg-primary-600 text-white shadow-sm'
+                      : 'bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800'
+                  }`}
+                >
+                  না
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Type of Illness (Conditional) */}
           {hasCriticalIllness && (
-            <div className="md:col-span-2">
-              <FormField
+            <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-lg space-y-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                অসুস্থতার বিস্তারিত বর্ণনা
+              </label>
+              <textarea
                 name="basicInformation.typeOfIllness"
-                label="অসুস্থতার প্রকার"
-                type="textarea"
-                placeholder="Describe the type of illness"
+                value={formik.values.basicInformation?.typeOfIllness || ''}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
                 rows={3}
+                className="w-full px-4 py-2.5 text-sm bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-900/50 focus:border-primary-500 transition-colors resize-none"
+                placeholder="অসুস্থতার ধরন, কতদিন ধরে, চিকিৎসা চলছে কিনা ইত্যাদি বিস্তারিত লিখুন..."
               />
             </div>
           )}
         </div>
-      </FormSection>
+      </div>
 
-      {/* Residence Information */}
-      <FormSection
-        title="আবাসিক তথ্য"
-        description="বাসস্থান সম্পর্কিত তথ্যাবলী"
-        icon={Home}
-        gradient="from-blue-500 to-indigo-500"
-      >
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <FormRadioGroup
-            name="basicInformation.isResident"
-            label="আবাসিক?"
-            options={yesNoOptions}
-          />
-
-          <FormCheckbox
-            name="basicInformation.isResident"
-            label="আবাসিক? (Resident)"
-          />
-
-          <FormSelect
-            name="basicInformation.residenceStatus"
-            label="আবাসিক অবস্থান"
-            options={residenceStatusOptions}
-            placeholder="Select status"
-          />
-
-          <FormSelect
-            name="basicInformation.houseType"
-            label="বাড়ির ধরন"
-            options={houseTypeOptions}
-            placeholder="Select type"
-          />
-        </div>
-      </FormSection>
-
-      {/* Household Details */}
-      <FormSection
-        title="বাড়ির বিবরণ"
-        description="বাড়ির অবকাঠামো এবং সুবিধাসমূহ"
-        icon={Building}
-        gradient="from-green-500 to-teal-500"
-      >
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <FormField
-            name="basicInformation.bedroom"
-            label="ঘরের সংখ্যা"
-            type="number"
-            placeholder="Enter number of bedrooms"
-            min={0}
-          />
-
-          {/* Facilities Checkboxes */}
-          <div className="md:col-span-2 lg:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-              বাড়ির সুবিধাসমূহ
-            </label>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              <FormCheckbox
-                name="basicInformation.balcony"
-                label="বারান্দা"
-              />
-
-              <FormCheckbox
-                name="basicInformation.kitchen"
-                label="রান্নাঘর"
-              />
-
-              <FormCheckbox
-                name="basicInformation.store"
-                label="স্টোর রুম"
-              />
-
-              <FormCheckbox
-                name="basicInformation.hasTubeWell"
-                label="টিউবয়েল"
-              />
-
-              <FormCheckbox
-                name="basicInformation.toilet"
-                label="শৌচাগার"
-              />
+      {/* Residence Card */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div className="border-b border-gray-200 dark:border-gray-700 px-6 py-4 bg-gray-50 dark:bg-gray-800/50">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center w-10 h-10 bg-primary-100 dark:bg-primary-900/30 rounded-lg">
+              <Home className="h-5 w-5 text-primary-600 dark:text-primary-400" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">আবাসিক তথ্য</h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400">বাসস্থান ও বসবাসের অবস্থা</p>
             </div>
           </div>
         </div>
-      </FormSection>
 
-      {/* Guardian Information */}
-      <FormSection
-        title="অভিভাবকের তথ্য"
-        description="অভিভাবক বা গার্ডিয়ানের পরিচিতি"
-        icon={User}
-        gradient="from-orange-500 to-red-500"
-      >
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <FormField
-            name="basicInformation.guardiansName"
-            label="অভিভাবকের নাম"
-            placeholder="Enter guardian's name"
-          />
+        <div className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Is Resident */}
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                আবাসিক?
+              </label>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    formik.setFieldValue('basicInformation.isResident', true);
+                    formik.setFieldValue('basicInformation.resident', true);
+                    formik.setFieldValue('basicInformation.isIsResident', true);
+                  }}
+                  className={`flex-1 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                    (formik.values.basicInformation?.isResident === true || (formik.values.basicInformation as any)?.resident === true)
+                      ? 'bg-primary-600 text-white shadow-sm'
+                      : 'bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800'
+                  }`}
+                >
+                  হ্যাঁ
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    formik.setFieldValue('basicInformation.isResident', false);
+                    formik.setFieldValue('basicInformation.resident', false);
+                  }}
+                  className={`flex-1 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                    (formik.values.basicInformation?.isResident === false || (formik.values.basicInformation as any)?.resident === false)
+                      ? 'bg-primary-600 text-white shadow-sm'
+                      : 'bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800'
+                  }`}
+                >
+                  না
+                </button>
+              </div>
+            </div>
 
-          <FormField
-            name="basicInformation.guardiansRelation"
-            label="সম্পর্ক"
-            placeholder="Enter relation (e.g., Uncle, Aunt)"
-          />
+            {/* Residence Status */}
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                আবাসিক অবস্থান
+              </label>
+              <div className="relative">
+                <select
+                  name="basicInformation.residenceStatus"
+                  value={formik.values.basicInformation?.residenceStatus || ''}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  className="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-900/50 focus:border-primary-500 appearance-none cursor-pointer transition-colors"
+                >
+                  <option value="">নির্বাচন করুন</option>
+                  <option value={ResidenceStatus.OWN}>নিজ</option>
+                  <option value={ResidenceStatus.RENTED}>ভাড়া</option>
+                  <option value={ResidenceStatus.SHELTERED}>আশ্রয়প্রাপ্ত</option>
+                  <option value={ResidenceStatus.HOMELESS}>গৃহহীন</option>
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400">
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+              </div>
+            </div>
 
-          <FormField
-            name="basicInformation.nid"
-            label="জাতীয় পরিচয়পত্র (NID)"
-            placeholder="Enter NID number"
-          />
+            {/* House Type */}
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                বাড়ির ধরন
+              </label>
+              <div className="relative">
+                <select
+                  name="basicInformation.houseType"
+                  value={formik.values.basicInformation?.houseType || ''}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  className="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-900/50 focus:border-primary-500 appearance-none cursor-pointer transition-colors"
+                >
+                  <option value="">নির্বাচন করুন</option>
+                  <option value={HouseType.CONCRETE_HOUSE}>পাকা বাড়ি</option>
+                  <option value={HouseType.SEMI_CONCRETE_HOUSE}>আধপাকা বাড়ি</option>
+                  <option value={HouseType.MUD_HOUSE}>কাঁচা বাড়ি</option>
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400">
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-              যোগাযোগের নম্বর
+      {/* Household Details Card */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div className="border-b border-gray-200 dark:border-gray-700 px-6 py-4 bg-gray-50 dark:bg-gray-800/50">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center w-10 h-10 bg-primary-100 dark:bg-primary-900/30 rounded-lg">
+              <Building2 className="h-5 w-5 text-primary-600 dark:text-primary-400" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">বাড়ির বিবরণ</h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400">ঘর ও সুবিধাসমূহের তথ্য</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-6 space-y-6">
+          {/* Bedroom Count */}
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              ঘরের সংখ্যা
             </label>
-            <div className="space-y-3">
-              <div className="flex items-center space-x-2">
-                <Phone className="h-4 w-4 text-gray-400" />
-                <FormField
+            <input
+              type="number"
+              name="basicInformation.bedroom"
+              value={formik.values.basicInformation?.bedroom || 0}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              className="w-full md:w-48 px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-900/50 focus:border-primary-500 transition-colors"
+              placeholder="0"
+              min="0"
+            />
+          </div>
+
+          {/* Facilities - Label Inline with First 2 Items */}
+          <div className="space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="flex items-center">
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  বাড়ির সুবিধাসমূহ
+                </label>
+              </div>
+              {[
+                { key: 'balcony', label: 'বারান্দা' },
+                { key: 'kitchen', label: 'রান্নাঘর' }
+              ].map(({ key, label }) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => formik.setFieldValue(
+                    `basicInformation.${key}`,
+                    !formik.values.basicInformation?.[key as keyof typeof formik.values.basicInformation]
+                  )}
+                  className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                    formik.values.basicInformation?.[key as keyof typeof formik.values.basicInformation]
+                      ? 'bg-primary-600 text-white shadow-sm'
+                      : 'bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800'
+                  }`}
+                >
+                  {label}
+                  {formik.values.basicInformation?.[key as keyof typeof formik.values.basicInformation] && (
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  )}
+                </button>
+              ))}
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {[
+                { key: 'store', label: 'স্টোর রুম' },
+                { key: 'hasTubeWell', label: 'টিউবয়েল' },
+                { key: 'toilet', label: 'শৌচাগার' }
+              ].map(({ key, label }) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => formik.setFieldValue(
+                    `basicInformation.${key}`,
+                    !formik.values.basicInformation?.[key as keyof typeof formik.values.basicInformation]
+                  )}
+                  className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                    formik.values.basicInformation?.[key as keyof typeof formik.values.basicInformation]
+                      ? 'bg-primary-600 text-white shadow-sm'
+                      : 'bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800'
+                  }`}
+                >
+                  {label}
+                  {formik.values.basicInformation?.[key as keyof typeof formik.values.basicInformation] && (
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Guardian Information Card */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div className="border-b border-gray-200 dark:border-gray-700 px-6 py-4 bg-gray-50 dark:bg-gray-800/50">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center w-10 h-10 bg-primary-100 dark:bg-primary-900/30 rounded-lg">
+              <User className="h-5 w-5 text-primary-600 dark:text-primary-400" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">অভিভাবকের তথ্য</h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400">গার্ডিয়ানের পরিচয় ও যোগাযোগ</p>
+            </div>
+          </div>
+        </div>
+
+
+        <div className="p-6">
+
+          {/* First Section - 2 Columns */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+            {/* Guardian's Name */}
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                অভিভাবকের নাম
+              </label>
+              <input
+                type="text"
+                name="basicInformation.guardiansName"
+                value={formik.values.basicInformation?.guardiansName || ''}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                className="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg text-sm 
+                focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-900/50 focus:border-primary-500 transition-colors"
+                placeholder="পূর্ণ নাম লিখুন"
+              />
+            </div>
+
+            {/* Guardian's Relation */}
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                সম্পর্ক
+              </label>
+              <select
+                name="basicInformation.guardiansRelation"
+                value={formik.values.basicInformation?.guardiansRelation || ''}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                className="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg text-sm 
+                focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-900/50 focus:border-primary-500 transition-colors"
+              >
+                <option value="">নির্বাচন করুন</option>
+                <option value="মা">মা</option>
+                <option value="ভাই/বোন">ভাই/বোন</option>
+                <option value="দাদা/дাদী">দাদা/দাদী</option>
+                <option value="নানা/নানী">নানা/নানী</option>
+                <option value="চাচা/চাচী">চাচা/চাচী</option>
+                <option value="ফুফা/ফুফু">ফুফা/ফুফু</option>
+                <option value="খালা/খালু">খালা/খালু</option>
+                <option value="মামা/মামী">মামা/মামী</option>
+                <option value="প্রতিবেশী">প্রতিবেশী</option>
+              </select>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+            {/* NID */}
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                জাতীয় পরিচয়পত্র (NID)
+              </label>
+              <input
+                type="text"
+                name="basicInformation.NID"
+                value={formik.values.basicInformation?.NID || (formik.values.basicInformation as any)?.nid || ''}
+                onChange={(e) => {
+                  formik.setFieldValue('basicInformation.NID', e.target.value);
+                  formik.setFieldValue('basicInformation.nid', e.target.value);
+                }}
+                onBlur={formik.handleBlur}
+                className="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-900/50 focus:border-primary-500 transition-colors"
+                placeholder="জাতীয় পরিচয়পত্র নম্বর"
+              />
+            </div>
+
+            {/* Primary Contact */}
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                যোগাযোগের নম্বর (primary)
+              </label>
+              <div className="relative">
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <input
+                  type="tel"
                   name="basicInformation.cell1"
-                  label=""
-                  placeholder="Primary phone number"
-                  className="flex-1"
+                  value={formik.values.basicInformation?.cell1 || '+880'}
+                  onChange={(e) => handlePhoneChange(e.target.value, 'basicInformation.cell1', formik)}
+                  onBlur={formik.handleBlur}
+                  onKeyDown={(e) => {
+                    const input = e.currentTarget;
+                    const value = input.value;
+                    // Prevent deletion of +880 prefix
+                    if ((e.key === 'Backspace' || e.key === 'Delete') && input.selectionStart !== null && input.selectionStart <= 4) {
+                      e.preventDefault();
+                    }
+                  }}
+                  className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-900/50 focus:border-primary-500 transition-colors"
+                  placeholder="+88017-0602-0534"
                 />
               </div>
-              <div className="flex items-center space-x-2">
-                <Phone className="h-4 w-4 text-gray-400" />
-                <FormField
+            </div>
+
+            {/* Optional Contact */}
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                যোগাযোগের নম্বর (optional)
+              </label>
+              <div className="relative">
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <input
+                  type="tel"
                   name="basicInformation.cell2"
-                  label=""
-                  placeholder="Secondary phone number (optional)"
-                  className="flex-1"
+                  value={formik.values.basicInformation?.cell2 || '+880'}
+                  onChange={(e) => handlePhoneChange(e.target.value, 'basicInformation.cell2', formik)}
+                  onBlur={formik.handleBlur}
+                  onKeyDown={(e) => {
+                    const input = e.currentTarget;
+                    const value = input.value;
+                    // Prevent deletion of +880 prefix
+                    if ((e.key === 'Backspace' || e.key === 'Delete') && input.selectionStart !== null && input.selectionStart <= 4) {
+                      e.preventDefault();
+                    }
+                  }}
+                  className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-900/50 focus:border-primary-500 transition-colors"
+                  placeholder="+88017-0602-0534"
                 />
               </div>
             </div>
           </div>
         </div>
-      </FormSection>
+      </div>
     </div>
   );
 };

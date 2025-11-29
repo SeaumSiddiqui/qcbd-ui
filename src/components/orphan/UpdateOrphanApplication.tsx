@@ -29,10 +29,26 @@ export const UpdateOrphanApplication: React.FC<UpdateOrphanApplicationProps> = (
   useEffect(() => {
     const loadApplication = async () => {
       if (!applicationId || application) return; // Prevent double fetch
-      
+
       try {
         setLoading(true);
         const data = await applicationService.getApplication(applicationId);
+
+        // Normalize backend field names to match frontend expectations
+        if (data.basicInformation) {
+          const basicInfo = data.basicInformation as any;
+
+          // Map backend 'resident' to frontend 'isResident'
+          if (basicInfo.resident !== undefined && basicInfo.isResident === undefined) {
+            basicInfo.isResident = basicInfo.resident;
+          }
+
+          // Map backend 'nid' to frontend 'NID'
+          if (basicInfo.nid !== undefined && basicInfo.NID === undefined) {
+            basicInfo.NID = basicInfo.nid;
+          }
+        }
+
         setApplication(data);
       } catch (error) {
         console.error('Failed to load application:', error);

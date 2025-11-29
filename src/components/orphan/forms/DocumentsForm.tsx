@@ -27,6 +27,7 @@ interface UploadProgress {
   completed: number;
   uploading: boolean;
 }
+
 const documentLabels: Record<DocumentType, string> = {
   [DocumentType.BIRTH_CERTIFICATE]: 'Birth Certificate',
   [DocumentType.TESTIMONIAL]: 'Testimonial',
@@ -64,15 +65,12 @@ export const DocumentsForm: React.FC<DocumentsFormProps> = ({
     }
   }, [applicationId]);
 
-  // Check if all required documents are uploaded
   useEffect(() => {
     const checkAllRequiredUploaded = () => {
       const allRequiredUploaded = requiredDocuments.every(docType =>
         documents[docType]?.uploaded
       );
 
-      // Auto change status to PENDING when all required documents are uploaded
-      // Only for COMPLETE status (after form submission) or REJECTED (after corrections)
       if (allRequiredUploaded &&
           [ApplicationStatus.COMPLETE, ApplicationStatus.REJECTED].includes(applicationStatus!) &&
           onStatusChange) {
@@ -83,13 +81,14 @@ export const DocumentsForm: React.FC<DocumentsFormProps> = ({
 
     checkAllRequiredUploaded();
   }, [documents, applicationStatus, onStatusChange, showToast]);
+
   const loadExistingDocuments = async () => {
     if (!applicationId) return;
-    
+
     try {
       setLoading(true);
       const documentUrls = await orphanMediaService.getAllDocumentUrls(applicationId);
-      
+
       const updatedDocuments: DocumentUploadState = {};
       Object.entries(documentUrls).forEach(([type, url]) => {
         updatedDocuments[type as DocumentType] = {
@@ -98,7 +97,7 @@ export const DocumentsForm: React.FC<DocumentsFormProps> = ({
           uploaded: true
         };
       });
-      
+
       setDocuments(updatedDocuments);
     } catch (error) {
       console.error('Failed to load documents:', error);
@@ -136,10 +135,9 @@ export const DocumentsForm: React.FC<DocumentsFormProps> = ({
       }));
 
       await orphanMediaService.uploadDocument(applicationId, docState.file, docType);
-      
-      // Reload to get the new URL
+
       const url = await orphanMediaService.getDocumentUrl(applicationId, docType);
-      
+
       setDocuments(prev => ({
         ...prev,
         [docType]: {
@@ -154,7 +152,7 @@ export const DocumentsForm: React.FC<DocumentsFormProps> = ({
     } catch (error) {
       console.error('Upload failed:', error);
       showToast('error', 'Upload Failed', `Failed to upload ${documentLabels[docType]}`);
-      
+
       setDocuments(prev => ({
         ...prev,
         [docType]: {
@@ -187,7 +185,7 @@ export const DocumentsForm: React.FC<DocumentsFormProps> = ({
     try {
       for (let i = 0; i < documentsToUpload.length; i++) {
         const [docType, docState] = documentsToUpload[i];
-        
+
         if (docState?.file && applicationId) {
           setDocuments(prev => ({
             ...prev,
@@ -199,9 +197,9 @@ export const DocumentsForm: React.FC<DocumentsFormProps> = ({
           }));
 
           await orphanMediaService.uploadDocument(applicationId, docState.file, docType as DocumentType);
-          
+
           const url = await orphanMediaService.getDocumentUrl(applicationId, docType as DocumentType);
-          
+
           setDocuments(prev => ({
             ...prev,
             [docType]: {
@@ -231,6 +229,7 @@ export const DocumentsForm: React.FC<DocumentsFormProps> = ({
       });
     }
   };
+
   const handleRemove = (docType: DocumentType) => {
     setDocuments(prev => ({
       ...prev,
@@ -256,57 +255,60 @@ export const DocumentsForm: React.FC<DocumentsFormProps> = ({
   const hasFilesToUpload = () => {
     return Object.values(documents).some(doc => doc?.file && !doc.uploaded);
   };
+
   const renderDocumentUpload = (docType: DocumentType) => {
     const docState = documents[docType];
     const isRequired = requiredDocuments.includes(docType);
     const hasError = getFieldError(docType);
 
     return (
-      <div key={docType} className={`border rounded-lg p-4 ${hasError ? 'border-red-300 dark:border-red-600' : 'border-gray-200 dark:border-gray-600'}`}>
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center space-x-2">
-            <FileText className="h-5 w-5 text-gray-500" />
-            <h4 className="font-medium text-gray-900 dark:text-white">
+      <div key={docType} className={`border rounded-lg p-5 bg-white dark:bg-gray-900/30 ${hasError ? 'border-red-300 dark:border-red-600' : 'border-gray-200 dark:border-gray-700'}`}>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2.5">
+            <div className="flex items-center justify-center w-9 h-9 bg-gray-100 dark:bg-gray-800 rounded-lg">
+              <FileText className="h-4.5 w-4.5 text-gray-600 dark:text-gray-400" />
+            </div>
+            <h4 className="font-medium text-gray-900 dark:text-white text-sm">
               {documentLabels[docType]}
               {isRequired && <span className="text-red-500 ml-1">*</span>}
             </h4>
           </div>
-          
+
           {docState?.uploaded && (
-            <div className="flex items-center space-x-2 text-green-600 dark:text-green-400">
+            <div className="flex items-center gap-1.5 text-green-600 dark:text-green-400">
               <CheckCircle className="h-4 w-4" />
-              <span className="text-sm">Uploaded</span>
+              <span className="text-xs font-medium">Uploaded</span>
             </div>
           )}
         </div>
 
         {docState?.uploaded && docState.url ? (
-          <div className="flex items-center justify-between bg-green-50 dark:bg-green-900/20 p-3 rounded-md">
-            <span className="text-sm text-green-800 dark:text-green-200">
+          <div className="flex items-center justify-between bg-green-50 dark:bg-green-900/20 p-3 rounded-lg border border-green-200 dark:border-green-800">
+            <span className="text-xs font-medium text-green-800 dark:text-green-200">
               Document uploaded successfully
             </span>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center gap-2">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => window.open(docState.url, '_blank')}
               >
-                <Eye className="h-4 w-4 mr-1" />
+                <Eye className="h-3.5 w-3.5 mr-1" />
                 View
               </Button>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => handleRemove(docType)}
-                className="text-red-600 hover:text-red-700"
+                className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
               >
-                <Trash2 className="h-4 w-4" />
+                <Trash2 className="h-3.5 w-3.5" />
               </Button>
             </div>
           </div>
         ) : (
           <div className="space-y-3">
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center gap-2">
               <input
                 type="file"
                 id={`file-${docType}`}
@@ -319,14 +321,14 @@ export const DocumentsForm: React.FC<DocumentsFormProps> = ({
               />
               <label
                 htmlFor={`file-${docType}`}
-                className="flex-1 flex items-center justify-center px-4 py-2 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-md cursor-pointer hover:border-primary-500 dark:hover:border-secondary-500 transition-colors"
+                className="flex-1 min-w-0 flex items-center justify-center px-4 py-3 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:border-primary-500 dark:hover:border-primary-600 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-all"
               >
-                <Upload className="h-5 w-5 text-gray-400 mr-2" />
-                <span className="text-sm text-gray-600 dark:text-gray-400">
+                <Upload className="h-4 w-4 text-gray-400 dark:text-gray-500 mr-2 flex-shrink-0" />
+                <span className="text-xs text-gray-600 dark:text-gray-400 truncate">
                   {docState?.file ? docState.file.name : 'Choose file or drag here'}
                 </span>
               </label>
-              
+
               {docState?.file && (
                 <Button
                   variant="primary"
@@ -334,22 +336,29 @@ export const DocumentsForm: React.FC<DocumentsFormProps> = ({
                   onClick={() => handleUpload(docType)}
                   loading={docState.uploading}
                   disabled={!applicationId}
+                  className="flex-shrink-0"
                 >
                   Upload
                 </Button>
               )}
             </div>
-            
+
             {!applicationId && (
-              <p className="text-xs text-yellow-600 dark:text-yellow-400">
-                Save the application first to enable document uploads
-              </p>
+              <div className="flex items-start gap-2 p-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                <AlertCircle className="h-4 w-4 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
+                <p className="text-xs text-yellow-700 dark:text-yellow-300">
+                  Save the application first to enable document uploads
+                </p>
+              </div>
             )}
           </div>
         )}
 
         {hasError && (
-          <p className="mt-2 text-sm text-red-600 dark:text-red-400">{hasError}</p>
+          <div className="mt-3 flex items-start gap-2 p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+            <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+            <p className="text-xs text-red-700 dark:text-red-300">{hasError}</p>
+          </div>
         )}
       </div>
     );
@@ -357,39 +366,61 @@ export const DocumentsForm: React.FC<DocumentsFormProps> = ({
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-900 dark:border-secondary-500"></div>
-        <span className="ml-2 text-gray-600 dark:text-gray-400">Loading documents...</span>
+      <div className="flex items-center justify-center py-12">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 dark:border-primary-500"></div>
+        <span className="ml-3 text-sm text-gray-600 dark:text-gray-400">Loading documents...</span>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <div className="bg-white dark:bg-gray-800 rounded-xl p-8 shadow-sm">
-        <div className="flex items-center space-x-4 mb-8">
-          <div className="flex items-center justify-center w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl shadow-lg">
-            <FileText className="h-6 w-6 text-white" />
-          </div>
-          <div>
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-              Required Documents
-            </h3>
-            <p className="text-gray-600 dark:text-gray-400">
-              Upload all required documents to complete your application
-            </p>
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div className="border-b border-gray-200 dark:border-gray-700 px-6 py-4 bg-gray-50 dark:bg-gray-800/50">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center w-10 h-10 bg-primary-100 dark:bg-primary-900/30 rounded-lg">
+              <FileText className="h-5 w-5 text-primary-600 dark:text-primary-400" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Required Documents</h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Upload all required documents to complete your application
+              </p>
+            </div>
           </div>
         </div>
 
+        <div className="p-6">
+          {uploadProgress.uploading && (
+            <div className="mb-6 p-4 bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 rounded-lg">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-primary-800 dark:text-primary-400">
+                  Uploading Documents...
+                </span>
+                <span className="text-sm text-primary-600 dark:text-primary-400">
+                  {uploadProgress.completed}/{uploadProgress.total}
+                </span>
+              </div>
+              <div className="w-full bg-primary-200 dark:bg-primary-800 rounded-full h-2">
+                <div
+                  className="bg-primary-600 dark:bg-primary-400 h-2 rounded-full transition-all duration-300"
+                  style={{
+                    width: `${(uploadProgress.completed / uploadProgress.total) * 100}%`
+                  }}
+                ></div>
+              </div>
+            </div>
+          )}
 
-          <div className="text-right">
-            <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-              Required: {getRequiredUploadedCount()}/{requiredDocuments.length} | 
-              Total: {getUploadedCount()}/{Object.keys(DocumentType).length}
+          <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200 dark:border-gray-700">
+            <div className="text-sm text-gray-600 dark:text-gray-400">
+              <span className="font-medium">Required:</span> {getRequiredUploadedCount()}/{requiredDocuments.length} |
+              <span className="font-medium ml-2">Total:</span> {getUploadedCount()}/{Object.keys(DocumentType).length}
             </div>
             {hasFilesToUpload() && (
               <Button
                 variant="primary"
+                size="sm"
                 onClick={handleUploadAll}
                 loading={uploadProgress.uploading}
                 disabled={!applicationId}
@@ -398,45 +429,26 @@ export const DocumentsForm: React.FC<DocumentsFormProps> = ({
               </Button>
             )}
           </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {Object.values(DocumentType).map(docType => renderDocumentUpload(docType))}
-        </div>
 
-        {/* Upload Progress Bar */}
-        {uploadProgress.uploading && (
-          <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-blue-800 dark:text-blue-400">
-                Uploading Documents...
-              </span>
-              <span className="text-sm text-blue-600 dark:text-blue-400">
-                {uploadProgress.completed}/{uploadProgress.total}
-              </span>
-            </div>
-            <div className="w-full bg-blue-200 dark:bg-blue-800 rounded-full h-2">
-              <div
-                className="bg-blue-600 dark:bg-blue-400 h-2 rounded-full transition-all duration-300"
-                style={{
-                  width: `${(uploadProgress.completed / uploadProgress.total) * 100}%`
-                }}
-              ></div>
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            {Object.values(DocumentType).map(docType => renderDocumentUpload(docType))}
           </div>
-        )}
-        <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-          <div className="flex items-start space-x-3">
-            <AlertCircle className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5" />
-            <div>
-              <h4 className="text-sm font-semibold text-blue-800 dark:text-blue-400 mb-1">
-                Document Upload Guidelines
-              </h4>
-              <ul className="text-sm text-blue-700 dark:text-blue-300 space-y-1">
-                <li>• Accepted formats: JPG, PNG, PDF</li>
-                <li>• Maximum file size: 5MB per document</li>
-                <li>• Documents marked with * are required</li>
-                <li>• Ensure documents are clear and readable</li>
-                <li>• Application will automatically move to PENDING once all required documents are uploaded</li>
-              </ul>
+
+          <div className="p-4 bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 rounded-lg">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="h-5 w-5 text-primary-600 dark:text-primary-400 flex-shrink-0 mt-0.5" />
+              <div>
+                <h4 className="text-sm font-semibold text-primary-800 dark:text-primary-300 mb-2">
+                  Document Upload Guidelines
+                </h4>
+                <ul className="text-xs text-primary-700 dark:text-primary-300 space-y-1">
+                  <li>• Accepted formats: JPG, PNG, PDF</li>
+                  <li>• Maximum file size: 5MB per document</li>
+                  <li>• Documents marked with * are required</li>
+                  <li>• Ensure documents are clear and readable</li>
+                  <li>• Application will automatically move to PENDING once all required documents are uploaded</li>
+                </ul>
+              </div>
             </div>
           </div>
         </div>
@@ -449,7 +461,6 @@ export const validateDocuments = (applicationId?: string): ValidationError[] => 
   const errors: ValidationError[] = [];
   const tabName = 'Documents';
 
-  // Only validate if we have an application ID (saved application)
   if (!applicationId) {
     errors.push({
       field: 'applicationId',
@@ -459,8 +470,5 @@ export const validateDocuments = (applicationId?: string): ValidationError[] => 
     return errors;
   }
 
-  // Note: We can't validate uploaded documents here without making API calls
-  // This validation would need to be done in the component or parent
-  
   return errors;
 };

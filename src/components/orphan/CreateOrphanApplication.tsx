@@ -76,12 +76,6 @@ export const CreateOrphanApplication: React.FC<CreateOrphanApplicationProps> = (
       NID: '',
       cell1: '',
       cell2: ''
-    },
-    verification: {
-      agentUserId: '',
-      authenticatorUserId: '',
-      investigatorUserId: '',
-      qcSwdUserId: ''
     }
   };
 

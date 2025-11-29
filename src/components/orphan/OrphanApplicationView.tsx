@@ -60,9 +60,25 @@ export const OrphanApplicationView: React.FC<OrphanApplicationViewProps> = () =>
     try {
       setLoading(true);
       const appData = await applicationService.getApplication(applicationId);
+
+      // Normalize backend field names to match frontend expectations
+      if (appData.basicInformation) {
+        const basicInfo = appData.basicInformation as any;
+
+        // Map backend 'resident' to frontend 'isResident'
+        if (basicInfo.resident !== undefined && basicInfo.isResident === undefined) {
+          basicInfo.isResident = basicInfo.resident;
+        }
+
+        // Map backend 'nid' to frontend 'NID'
+        if (basicInfo.nid !== undefined && basicInfo.NID === undefined) {
+          basicInfo.NID = basicInfo.nid;
+        }
+      }
+
       setApplication(appData);
 
-      const applicationFormHtml = documentGenerator.generateApplicationDocument(appData);
+      const applicationFormHtml = await documentGenerator.generateApplicationDocument(appData);
       const blob = new Blob([applicationFormHtml], { type: 'text/html' });
       const applicationFormUrl = URL.createObjectURL(blob);
 

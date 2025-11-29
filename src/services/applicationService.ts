@@ -47,36 +47,18 @@ export const applicationService = {
   // Single Application CRUD Operations
   async createApplication(application: OrphanApplication): Promise<OrphanApplication> {
     const authHeaders = keycloakService.getAuthHeader();
-    const currentUser = keycloakService.getUser();
-    
+
     try {
       console.log('Creating orphan application');
       console.log(`API URL: ${API_BASE_URL}`);
-      
-      let updatedApplication = { ...application };
-      
-      if (currentUser?.id && !application.verification?.agentUserId) {
-        try {
-          updatedApplication = {
-            ...updatedApplication,
-            verification: {
-              ...updatedApplication.verification,
-              agentUserId: currentUser.id
-            }
-          };
-        } catch (error) {
-          console.warn('Failed to capture agent user ID:', error);
-        }
-      }
-      
+
       const requestBody = {
         beneficiaryUserId: application.beneficiaryUserId,
-        status: updatedApplication.status,
-        primaryInformation: updatedApplication.primaryInformation,
-        address: updatedApplication.address,
-        familyMembers: updatedApplication.familyMembers,
-        basicInformation: updatedApplication.basicInformation,
-        verification: updatedApplication.verification
+        status: application.status,
+        primaryInformation: application.primaryInformation,
+        address: application.address,
+        familyMembers: application.familyMembers,
+        basicInformation: application.basicInformation
       };
       
       console.log('Application request body:', JSON.stringify(requestBody, null, 2));
