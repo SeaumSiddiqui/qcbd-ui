@@ -114,7 +114,7 @@ export const OrganizationProfile: React.FC<OrganizationProfileProps> = ({
     <div className="space-y-6 animate-slide-up">
       {/* Header Card with Avatar and Basic Info */}
       <Card className="overflow-hidden">
-        <div className="h-32 bg-gradient-to-r from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700"></div>
+        <div className="h-32 bg-gradient-to-r from-primary-500 to-primary-900 dark:from-secondary-500 dark:to-secondary-900"></div>
         <CardContent className="relative px-6 pb-6">
           {/* Avatar */}
           <div className="flex flex-col sm:flex-row sm:items-end sm:space-x-6">

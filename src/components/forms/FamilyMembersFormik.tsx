@@ -139,7 +139,7 @@ export const FamilyMembersFormik: React.FC<FamilyMembersFormikProps> = ({
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                           <div className="space-y-2">
                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                              নাম
+                              নাম <span className="text-red-500">*</span>
                             </label>
                             <input
                               type="text"
@@ -157,12 +157,12 @@ export const FamilyMembersFormik: React.FC<FamilyMembersFormikProps> = ({
 
                           <div className="space-y-2">
                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                              বয়স
+                              বয়স <span className="text-red-500">*</span>
                             </label>
                             <input
                               type="number"
                               name={`familyMembers.${index}.age`}
-                              value={formik.values.familyMembers?.[index]?.age || 0}
+                              value={formik.values.familyMembers?.[index]?.age ?? ''}
                               onChange={formik.handleChange}
                               onBlur={formik.handleBlur}
                               min={0}
@@ -176,7 +176,7 @@ export const FamilyMembersFormik: React.FC<FamilyMembersFormikProps> = ({
 
                           <div className="space-y-2">
                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                              লিঙ্গ
+                              লিঙ্গ <span className="text-red-500">*</span>
                             </label>
                             <div className="relative">
                               <select
@@ -239,7 +239,7 @@ export const FamilyMembersFormik: React.FC<FamilyMembersFormikProps> = ({
 
                           <div className="space-y-2">
                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                              বৈবাহিক অবস্থা
+                              বৈবাহিক অবস্থা <span className="text-red-500">*</span>
                             </label>
                             <div className="relative">
                               <select

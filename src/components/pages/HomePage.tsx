@@ -40,8 +40,19 @@ export const HomePage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-primary-900 via-primary-800 to-primary-700 dark:from-secondary-900 dark:via-secondary-800 dark:to-secondary-700 text-white">
-        <div className="absolute inset-0 bg-black/20"></div>
+      <section className="relative overflow-hidden text-white">
+        <video
+          autoPlay
+          muted
+          loop
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover"
+        >
+          <source src="/hero-video.mp4" type="video/mp4" />
+        </video>
+
+        <div className="absolute inset-0 bg-gradient-to-br from-black/60 via-black/50 to-black/60"></div>
+
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 lg:py-32">
           <div className="text-center animate-fade-in">
             <div className="flex items-center justify-center mb-8">
@@ -49,36 +60,38 @@ export const HomePage: React.FC = () => {
                 <Heart className="h-10 w-10 text-white" />
               </div>
             </div>
-            <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
+            <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight drop-shadow-lg">
               Qatar Charity
-              <span className="block text-secondary-200 dark:text-primary-200">Bangladesh</span>
+              <span className="block text-gray-100">Bangladesh</span>
             </h1>
-            <p className="text-xl md:text-2xl text-gray-200 mb-8 max-w-3xl mx-auto leading-relaxed">
+            <p className="text-xl md:text-2xl text-gray-100 mb-8 max-w-3xl mx-auto leading-relaxed drop-shadow-md">
               Empowering communities through compassionate charity programs and sustainable development initiatives across Bangladesh.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               {!isAuthenticated ? (
                 <Button
                   onClick={login}
+                  variant="ghost"
                   size="lg"
-                  className="bg-primary text-primary-900 hover:bg-gray-100 dark:bg-secondary-100 dark:text-secondary-900 dark:hover:bg-secondary-200"
+                  className="bg-white text-primary-900 hover:bg-primary-900 hover:text-white shadow-xl font-semibold transition-all duration-300"
                 >
                   Get Started
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               ) : (
                 <Button
+                  variant="ghost"
                   size="lg"
-                  className="bg-primary text-primary-900 hover:bg-gray-100 dark:bg-secondary-100 dark:text-secondary-900 dark:hover:bg-secondary-200"
+                  className="bg-white text-primary-900 hover:bg-primary-900 hover:text-white shadow-xl font-semibold transition-all duration-300"
                 >
                   Go to Dashboard
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               )}
               <Button
-                variant="outline"
+                variant="ghost"
                 size="lg"
-                className="bg-white text-primary-900 hover:bg-gray-100 dark:bg-dark-primary-100 dark:text-dark-primary-900 dark:hover:bg-dark-primary-200"
+                className="bg-white/10 backdrop-blur-sm text-white border-2 border-white hover:bg-white hover:text-primary-900 shadow-xl font-semibold transition-all duration-300"
               >
                 Learn More
               </Button>
@@ -121,8 +134,7 @@ export const HomePage: React.FC = () => {
             {features.map((feature, index) => {
               const Icon = feature.icon;
               return (
-                //<Card key={index} className="text-center animate-slide-up" style={{ animationDelay: `${index * 0.1}s` }}>
-                <Card key={index} className="text-center animate-slide-up">
+                <Card key={index} className="text-center animate-slide-up" style={{ animationDelay: `${index * 0.1}s` }}>
                   <CardContent className="p-8">
                     <div className="flex items-center justify-center w-16 h-16 bg-primary-100 dark:bg-secondary-900/30 rounded-2xl mx-auto mb-6">
                       <Icon className="h-8 w-8 text-primary-900 dark:text-dark-primary-500" />
@@ -199,16 +211,18 @@ export const HomePage: React.FC = () => {
           {!isAuthenticated ? (
             <Button
               onClick={login}
+              variant="ghost"
               size="lg"
-              className="bg-primary text-primary-900 hover:bg-gray-100 dark:bg-dark-primary-100 dark:text-dark-primary-900 dark:hover:bg-dark-primary-200"
+              className="bg-white text-primary-900 hover:bg-primary-900 hover:text-white shadow-xl font-semibold transition-all duration-300"
             >
               Sign Up Today
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
           ) : (
             <Button
+              variant="ghost"
               size="lg"
-              className="bg-primary text-primary-900 hover:bg-gray-100 dark:bg-dark-primary-100 dark:text-dark-primary-900 dark:hover:bg-dark-primary-200"
+              className="bg-white text-primary-900 hover:bg-primary-900 hover:text-white shadow-xl font-semibold transition-all duration-300"
             >
               View Your Programs
               <ArrowRight className="ml-2 h-5 w-5" />

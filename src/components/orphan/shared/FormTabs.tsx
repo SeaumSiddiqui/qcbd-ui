@@ -17,7 +17,7 @@ export const FormTabs: React.FC<FormTabsProps> = ({
   onPreview
 }) => {
   return (
-    <div className="sticky top-0 z-30 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm">
+    <div className="sticky top-20 z-30 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm">
       <div className="w-full px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between">
           <nav className="flex space-x-8 overflow-x-auto" aria-label="Application Tabs">

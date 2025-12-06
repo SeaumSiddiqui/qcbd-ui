@@ -5,13 +5,15 @@ interface CardProps {
   className?: string;
   hover?: boolean;
   onClick?: () => void;
+  style?: React.CSSProperties;
 }
 
-export const Card: React.FC<CardProps> = ({ 
-  children, 
-  className = '', 
+export const Card: React.FC<CardProps> = ({
+  children,
+  className = '',
   hover = false,
-  onClick 
+  onClick,
+  style
 }) => {
   return (
     <div
@@ -23,6 +25,7 @@ export const Card: React.FC<CardProps> = ({
         ${className}
       `}
       onClick={onClick}
+      style={style}
     >
       {children}
     </div>

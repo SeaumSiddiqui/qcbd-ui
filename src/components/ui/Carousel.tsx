@@ -9,7 +9,6 @@ interface CarouselSlide {
   icon: React.ComponentType<{ className?: string }>;
   backgroundImage: string;
 }
-
 const slides: CarouselSlide[] = [
   {
     id: '1',
@@ -80,7 +79,7 @@ export const Carousel: React.FC = () => {
   };
 
   return (
-    <div className="relative w-full h-96 overflow-hidden z-10">
+    <div className="relative w-full h-[27rem] overflow-hidden z-10">
       {/* Slides */}
       <div className="relative h-full">
         {slides.map((slide, index) => {
@@ -93,7 +92,7 @@ export const Carousel: React.FC = () => {
               }`}
             >
               {/* Background Image */}
-              <div 
+              <div
                 className="absolute inset-0 bg-cover bg-center bg-no-repeat"
                 style={{ backgroundImage: `url(${slide.backgroundImage})` }}
               >

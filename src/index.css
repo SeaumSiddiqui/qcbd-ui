@@ -59,13 +59,20 @@
   
   /* Error highlight animation */
   .error-highlight {
-    @apply ring-2 ring-red-500 ring-opacity-50;
+    @apply ring-4 ring-red-500 ring-offset-2 ring-offset-white dark:ring-offset-gray-900;
     animation: errorPulse 2s ease-in-out;
+    transition: all 0.3s ease-in-out;
   }
-  
+
   @keyframes errorPulse {
-    0%, 100% { @apply ring-opacity-50; }
-    50% { @apply ring-opacity-100; }
+    0%, 100% {
+      @apply ring-4 ring-red-500;
+      transform: scale(1);
+    }
+    50% {
+      @apply ring-4 ring-red-600;
+      transform: scale(1.02);
+    }
   }
   
   .animate-fade-in {

@@ -51,6 +51,61 @@ const handlePhoneChange = (value: string, fieldName: string, formik: FormikProps
   formik.setFieldValue(fieldName, formatted);
 };
 
+// NID formatting utility
+const formatNID = (value: string): string => {
+  // Remove all non-digit characters
+  const digitsOnly = value.replace(/\D/g, '');
+
+  // Limit to 17 digits max
+  const limitedDigits = digitsOnly.slice(0, 17);
+
+  // Format based on length
+  if (limitedDigits.length === 0) {
+    return '';
+  } else if (limitedDigits.length <= 10) {
+    // Format as xxx-xxx-xxxx (3-3-4)
+    if (limitedDigits.length <= 3) {
+      return limitedDigits;
+    } else if (limitedDigits.length <= 6) {
+      return `${limitedDigits.slice(0, 3)}-${limitedDigits.slice(3)}`;
+    } else {
+      return `${limitedDigits.slice(0, 3)}-${limitedDigits.slice(3, 6)}-${limitedDigits.slice(6)}`;
+    }
+  } else if (limitedDigits.length === 13) {
+    // Format as xxxx-xxx-xxx-xxx (4-3-3-3) for exactly 13 digits
+    if (limitedDigits.length <= 4) {
+      return limitedDigits;
+    } else if (limitedDigits.length <= 7) {
+      return `${limitedDigits.slice(0, 4)}-${limitedDigits.slice(4)}`;
+    } else if (limitedDigits.length <= 10) {
+      return `${limitedDigits.slice(0, 4)}-${limitedDigits.slice(4, 7)}-${limitedDigits.slice(7)}`;
+    } else {
+      return `${limitedDigits.slice(0, 4)}-${limitedDigits.slice(4, 7)}-${limitedDigits.slice(7, 10)}-${limitedDigits.slice(10)}`;
+    }
+  } else {
+    // Format as xxxx-xx-x-xx-xx-xxxxxx (4-2-1-2-2-6) for 11-12 and 14-17 digits
+    if (limitedDigits.length <= 4) {
+      return limitedDigits;
+    } else if (limitedDigits.length <= 6) {
+      return `${limitedDigits.slice(0, 4)}-${limitedDigits.slice(4)}`;
+    } else if (limitedDigits.length <= 7) {
+      return `${limitedDigits.slice(0, 4)}-${limitedDigits.slice(4, 6)}-${limitedDigits.slice(6)}`;
+    } else if (limitedDigits.length <= 9) {
+      return `${limitedDigits.slice(0, 4)}-${limitedDigits.slice(4, 6)}-${limitedDigits.slice(6, 7)}-${limitedDigits.slice(7)}`;
+    } else if (limitedDigits.length <= 11) {
+      return `${limitedDigits.slice(0, 4)}-${limitedDigits.slice(4, 6)}-${limitedDigits.slice(6, 7)}-${limitedDigits.slice(7, 9)}-${limitedDigits.slice(9)}`;
+    } else {
+      return `${limitedDigits.slice(0, 4)}-${limitedDigits.slice(4, 6)}-${limitedDigits.slice(6, 7)}-${limitedDigits.slice(7, 9)}-${limitedDigits.slice(9, 11)}-${limitedDigits.slice(11)}`;
+    }
+  }
+};
+
+const handleNIDChange = (value: string, formik: FormikProps<OrphanApplication>) => {
+  const formatted = formatNID(value);
+  formik.setFieldValue('basicInformation.NID', formatted);
+  formik.setFieldValue('basicInformation.nid', formatted);
+};
+
 export const BasicInformationFormik: React.FC<BasicInformationFormikProps> = ({ formik }) => {
   const hasCriticalIllness = formik.values.basicInformation?.hasCriticalIllness;
 
@@ -463,14 +518,20 @@ export const BasicInformationFormik: React.FC<BasicInformationFormikProps> = ({ 
                 type="text"
                 name="basicInformation.NID"
                 value={formik.values.basicInformation?.NID || (formik.values.basicInformation as any)?.nid || ''}
-                onChange={(e) => {
-                  formik.setFieldValue('basicInformation.NID', e.target.value);
-                  formik.setFieldValue('basicInformation.nid', e.target.value);
-                }}
+                onChange={(e) => handleNIDChange(e.target.value, formik)}
                 onBlur={formik.handleBlur}
-                className="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-900/50 focus:border-primary-500 transition-colors"
-                placeholder="জাতীয় পরিচয়পত্র নম্বর"
+                className={`w-full px-4 py-2.5 bg-white dark:bg-gray-900 border rounded-lg text-sm focus:ring-2 transition-colors ${
+                  getFieldError('basicInformation.NID')
+                    ? 'border-red-300 dark:border-red-700 focus:ring-red-200 dark:focus:ring-red-900/50 focus:border-red-500'
+                    : 'border-gray-300 dark:border-gray-600 focus:ring-primary-200 dark:focus:ring-primary-900/50 focus:border-primary-500'
+                }`}
+                placeholder="xxx-xxx-xxxx or xxxx-xx-x-xx-xx-xxxxxx"
               />
+              {getFieldError('basicInformation.NID') && (
+                <p className="text-xs text-red-600 dark:text-red-400 mt-1">
+                  {getFieldError('basicInformation.NID')}
+                </p>
+              )}
             </div>
 
             {/* Primary Contact */}

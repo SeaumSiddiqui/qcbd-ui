@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { FormikProps } from 'formik';
 import { User, Calendar, Heart, GraduationCap, Users, DollarSign } from 'lucide-react';
 import { Gender, MothersStatus, OrphanApplication } from '../../types';
@@ -15,6 +15,32 @@ export const PrimaryInformationFormik: React.FC<PrimaryInformationFormikProps> =
   userProfile,
   isEditing = false
 }) => {
+  const calculateAge = (dateOfBirth: string): number => {
+    if (!dateOfBirth) return 0;
+
+    const today = new Date();
+    const birthDate = new Date(dateOfBirth);
+
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+
+    return age;
+  };
+
+  useEffect(() => {
+    const dateOfBirth = formik.values.primaryInformation?.dateOfBirth;
+    if (dateOfBirth) {
+      const calculatedAge = calculateAge(dateOfBirth);
+      if (calculatedAge !== formik.values.primaryInformation?.age) {
+        formik.setFieldValue('primaryInformation.age', calculatedAge);
+      }
+    }
+  }, [formik.values.primaryInformation?.dateOfBirth]);
+
   const handleSiblingsChange = (count: number) => {
     formik.setFieldValue('primaryInformation.numOfSiblings', count);
 
@@ -140,14 +166,14 @@ export const PrimaryInformationFormik: React.FC<PrimaryInformationFormikProps> =
               <input
                 type="number"
                 name="primaryInformation.age"
-                value={formik.values.primaryInformation?.age || ''}
-                onChange={formik.handleChange}
-                onBlur={formik.handleBlur}
+                value={formik.values.primaryInformation?.age ?? ''}
+                readOnly
                 min={0}
                 max={18}
-                className="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-900/50 focus:border-primary-500 transition-colors"
-                placeholder="Enter age"
+                className="w-full px-4 py-2.5 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-sm cursor-not-allowed text-gray-600 dark:text-gray-400"
+                placeholder="Auto-calculated from date of birth"
               />
+              <p className="text-xs text-gray-500 dark:text-gray-400">Age is automatically calculated from date of birth</p>
               {getFieldError('primaryInformation.age') && (
                 <p className="text-xs text-red-600 dark:text-red-400">{getFieldError('primaryInformation.age')}</p>
               )}
@@ -241,7 +267,7 @@ export const PrimaryInformationFormik: React.FC<PrimaryInformationFormikProps> =
 
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  মৃত্যু তারিখ
+                  মৃত্যু তারিখ <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="date"
@@ -293,17 +319,33 @@ export const PrimaryInformationFormik: React.FC<PrimaryInformationFormikProps> =
 
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  মাতার পেশা
+                  মাতার পেশা <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type="text"
-                  name="primaryInformation.mothersOccupation"
-                  value={formik.values.primaryInformation?.mothersOccupation || ''}
-                  onChange={formik.handleChange}
-                  onBlur={formik.handleBlur}
-                  className="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-900/50 focus:border-primary-500 transition-colors"
-                  placeholder="Enter mother's occupation"
-                />
+                <div className="relative">
+                  <select
+                    name="primaryInformation.mothersOccupation"
+                    value={formik.values.primaryInformation?.mothersOccupation || ''}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    className="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-900/50 focus:border-primary-500 appearance-none cursor-pointer transition-colors"
+                  >
+                    <option value="">নির্বাচন করুন</option>
+                    <option value="গৃহিণী">গৃহিণী</option>
+                    <option value="শ্রমিক">শ্রমিক</option>
+                    <option value="গৃহপরিচারিকা">গৃহপরিচারিকা</option>
+                    <option value="চাকরিজীবী">চাকরিজীবী</option>
+                    <option value="ব্যাবসায়ী">ব্যাবসায়ী</option>
+                    <option value="অন্যান্য">অন্যান্য</option>
+                  </select>
+                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400">
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                </div>
+                {getFieldError('primaryInformation.mothersOccupation') && (
+                  <p className="text-xs text-red-600 dark:text-red-400">{getFieldError('primaryInformation.mothersOccupation')}</p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -439,18 +481,21 @@ export const PrimaryInformationFormik: React.FC<PrimaryInformationFormikProps> =
             {/* Grade - 1 column */}
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                শ্রেণী
+                শ্রেণী <span className="text-red-500">*</span>
               </label>
               <input
                 type="number"
                 name="primaryInformation.grade"
-                value={formik.values.primaryInformation?.grade || ''}
+                value={formik.values.primaryInformation?.grade ?? ''}
                 onChange={formik.handleChange}
                 onBlur={formik.handleBlur}
                 min={0}
                 className="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-900/50 focus:border-primary-500 transition-colors"
                 placeholder="Enter current grade/class"
               />
+              {getFieldError('primaryInformation.grade') && (
+                <p className="text-xs text-red-600 dark:text-red-400">{getFieldError('primaryInformation.grade')}</p>
+              )}
             </div>
           </div>
         </div>

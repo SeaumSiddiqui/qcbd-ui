@@ -129,26 +129,92 @@ export const validatePostalCode = (code: string, fieldName: string, tabName?: st
 };
 
 export const scrollToError = (path: string) => {
-  // Convert path to input name (e.g., 'primaryInformation.fullName' -> 'primary-information-full-name')
-  const fieldId = path.replace(/\./g, '-').toLowerCase();
-  
-  // Find the error element
-  const errorElement = document.querySelector(`[name="${path}"]`);
+  // Try multiple strategies to find the error field
+  let errorElement: Element | null = null;
+
+  // Special handling for familyMembers array errors
+  if (path === 'familyMembers' || path.startsWith('familyMembers[')) {
+    // If error is on the array itself, scroll to the first family member field
+    if (path === 'familyMembers') {
+      errorElement = document.querySelector('[name="familyMembers.0.name"]');
+    } else {
+      // Extract index from path like "familyMembers[0]" or "familyMembers[0].name"
+      const match = path.match(/familyMembers\[(\d+)\](?:\.(.+))?/);
+      if (match) {
+        const index = match[1];
+        const field = match[2] || 'name'; // Default to name field if no specific field
+        errorElement = document.querySelector(`[name="familyMembers.${index}.${field}"]`);
+      }
+    }
+  }
+
+  // Strategy 1: Find by exact name attribute match
+  if (!errorElement) {
+    errorElement = document.querySelector(`[name="${path}"]`);
+  }
+
+  // Strategy 2: Try with ID (some fields might use ID instead of name)
+  if (!errorElement) {
+    const fieldId = path.replace(/\./g, '-').toLowerCase();
+    errorElement = document.getElementById(fieldId);
+  }
+
+  // Strategy 3: Try to find any input within a container with data-field attribute
+  if (!errorElement) {
+    const container = document.querySelector(`[data-field="${path}"]`);
+    if (container) {
+      errorElement = container.querySelector('input, select, textarea, button');
+    }
+  }
+
+  // Strategy 4: For nested paths like "primaryInformation.age", try direct match
+  if (!errorElement && path.includes('.')) {
+    errorElement = document.querySelector(`[name="${path}"]`);
+  }
+
+  // Strategy 5: Try partial match on name attribute (last resort)
+  if (!errorElement) {
+    const fieldName = path.split('.').pop(); // Get last part of path
+    errorElement = document.querySelector(`[name*="${fieldName}"]`);
+  }
+
   if (errorElement) {
-    // Scroll the element into view with smooth behavior
-    errorElement.scrollIntoView({ 
-      behavior: 'smooth', 
-      block: 'center' 
+    // First, scroll the element into view
+    errorElement.scrollIntoView({
+      behavior: 'smooth',
+      block: 'center',
+      inline: 'nearest'
     });
-    
-    // Optional: Add focus and highlight effect
-    (errorElement as HTMLElement).focus();
-    errorElement.classList.add('error-highlight');
-    
-    // Remove highlight after animation
+
+    // Wait a bit for scroll to complete, then focus and highlight
     setTimeout(() => {
-      errorElement.classList.remove('error-highlight');
-    }, 2000);
+      // Try to focus the element
+      if (errorElement instanceof HTMLElement) {
+        errorElement.focus({ preventScroll: true });
+      }
+
+      // Add visual highlight
+      errorElement.classList.add('error-highlight');
+
+      // Pulse effect for better visibility
+      errorElement.animate([
+        { boxShadow: '0 0 0 0 rgba(239, 68, 68, 0.7)' },
+        { boxShadow: '0 0 0 8px rgba(239, 68, 68, 0)' },
+      ], {
+        duration: 1000,
+        iterations: 2
+      });
+
+      // Remove highlight class after animation
+      setTimeout(() => {
+        errorElement?.classList.remove('error-highlight');
+      }, 2000);
+    }, 300);
+
+    return true;
+  } else {
+    console.warn(`Could not find error field for path: ${path}`);
+    return false;
   }
 };
 

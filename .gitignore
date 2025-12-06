@@ -25,6 +25,7 @@ lerna-debug.log*
 .env
 .env.*
 !.env.example
+.bolt
 
 # -----------------------
 # Editor configs (keep recommended extensions)

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Formik, FormikProps } from 'formik';
 import { AlertCircle, CheckCircle, Clock, X, User, AlertTriangle } from 'lucide-react';
 import { OrphanApplication, ApplicationStatus, PhysicalCondition, Gender, UserProfile, Verification } from '../../types';
@@ -56,8 +56,18 @@ export const OrphanApplicationForm: React.FC<OrphanApplicationFormProps> = ({
   const [showPreview, setShowPreview] = useState(false);
   const [previewData, setPreviewData] = useState<OrphanApplication | null>(null);
   const { showToast } = useToast();
+  const formContentRef = useRef<HTMLDivElement>(null);
 
-  const tabs = [
+  useEffect(() => {
+    if (formContentRef.current) {
+      const yOffset = -40;
+      const element = formContentRef.current;
+      const y = element.getBoundingClientRect().top + window.pageYOffset + yOffset;
+      window.scrollTo({ top: y, behavior: 'smooth' });
+    }
+  }, [activeTab]);
+
+  const allTabs = [
     {
       id: 'primary',
       label: 'Primary Information',
@@ -102,6 +112,13 @@ export const OrphanApplicationForm: React.FC<OrphanApplicationFormProps> = ({
     }
   ];
 
+  const tabs = allTabs.filter(tab => {
+    if (tab.id === 'documents') {
+      return initialValues.id && initialValues.status !== 'INCOMPLETE';
+    }
+    return true;
+  });
+
   const handleSave = async (values: OrphanApplication, formik: FormikProps<OrphanApplication>, submit = false) => {
     try {
       const validationSchema = submit ? orphanApplicationSchema : partialOrphanApplicationSchema;
@@ -145,9 +162,16 @@ export const OrphanApplicationForm: React.FC<OrphanApplicationFormProps> = ({
 
         const firstError = error.inner[0];
         const firstErrorTab = getTabNameFromPath(firstError.path);
+        const errorCount = error.inner.length;
 
-        showToast('error', 'Validation Error', firstError.message);
+        // Show error count and which section
+        const errorMessage = errorCount > 1
+          ? `${firstError.message} (${errorCount} errors found)`
+          : firstError.message;
 
+        showToast('error', `Validation Error in ${firstErrorTab}`, errorMessage);
+
+        // Map field path prefix to tab ID
         const tabMapping: { [key: string]: string } = {
           'primaryInformation': 'primary',
           'address': 'address',
@@ -157,13 +181,19 @@ export const OrphanApplicationForm: React.FC<OrphanApplicationFormProps> = ({
           'verification': 'verification'
         };
 
-        const targetTab = tabMapping[firstErrorTab.split('.')[0]];
+        // Extract the field path prefix (e.g., "primaryInformation" from "primaryInformation.fullName")
+        const fieldPathPrefix = firstError.path.split('.')[0];
+        const targetTab = tabMapping[fieldPathPrefix];
+
         if (targetTab && targetTab !== activeTab) {
+          // Step 1: Switch to the tab containing the error
           setActiveTab(targetTab);
+          // Step 2: Wait for tab content to render, then scroll to error field
           setTimeout(() => {
             scrollToError(firstError.path);
-          }, 100);
+          }, 300);
         } else {
+          // Error is in current tab, just scroll to it
           scrollToError(firstError.path);
         }
       } else {
@@ -359,7 +389,7 @@ export const OrphanApplicationForm: React.FC<OrphanApplicationFormProps> = ({
             onPreview={() => handlePreview(formik.values)}
           />
 
-          <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
+          <div ref={formContentRef} className="w-full px-4 sm:px-6 lg:px-8 py-8">
             <div className="max-w-6xl mx-auto">
               <div className="mb-8">
                 <UserSelector
@@ -450,15 +480,14 @@ export const OrphanApplicationForm: React.FC<OrphanApplicationFormProps> = ({
                 canGoNext={canGoNext}
               />
 
-              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-8">
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                   {showStatusChangeButton && (
                     <Button
                       type="button"
                       variant="primary"
                       onClick={onStatusChange}
-                      size="lg"
-                      className="w-full sm:w-auto min-w-[200px]"
+                      className="w-full sm:w-auto"
                     >
                       Change Status
                     </Button>
@@ -469,8 +498,7 @@ export const OrphanApplicationForm: React.FC<OrphanApplicationFormProps> = ({
                     variant="primary"
                     onClick={() => handleSave(formik.values, formik, true)}
                     loading={saving}
-                    size="lg"
-                    className="w-full sm:w-auto min-w-[200px]"
+                    className="w-full sm:w-auto"
                   >
                     Submit Application
                   </Button>
@@ -480,12 +508,20 @@ export const OrphanApplicationForm: React.FC<OrphanApplicationFormProps> = ({
                     variant="secondary"
                     onClick={() => handleSave(formik.values, formik, false)}
                     loading={saving}
-                    size="lg"
-                    className="w-full sm:w-auto min-w-[200px]"
+                    className="w-full sm:w-auto"
                   >
                     Save as Draft
                   </Button>
                 </div>
+
+                {hasUnsavedChanges && (
+                  <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <div className="flex items-center justify-center gap-2 text-sm text-yellow-600 dark:text-yellow-400">
+                      <div className="w-1.5 h-1.5 bg-yellow-500 rounded-full animate-pulse"></div>
+                      <span>Unsaved changes</span>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {showExitWarning && (
